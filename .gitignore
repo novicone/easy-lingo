@@ -1,0 +1,8 @@
+node_modules/
+dist/
+apps/*/node_modules/
+services/*/node_modules/
+packages/*/node_modules/
+/.idea/
+/.vscode/
+*.log

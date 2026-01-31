@@ -1,0 +1,16 @@
+{
+  "name": "easy-lingo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @easy-lingo/web dev",
+    "dev:api": "pnpm --filter @easy-lingo/api dev",
+    "dev": "pnpm --parallel --filter @easy-lingo/web --filter @easy-lingo/api dev"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.30",
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
+  }
+}

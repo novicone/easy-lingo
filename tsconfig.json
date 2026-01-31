@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "types": ["vitest/globals", "node"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules",
+      "./apps/web/node_modules/@types",
+      "./apps/web/node_modules",
+      "./services/api/node_modules/@types",
+      "./services/api/node_modules"
+    ],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@easy-lingo/shared": ["packages/shared/src"]
+    }
+  },
+  "include": ["apps", "packages", "services"]
+}
