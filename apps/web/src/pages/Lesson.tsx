@@ -1,12 +1,12 @@
-import type {
-  Exercise,
-  ExerciseResult,
+import {
   ExerciseType,
-  LessonProgress,
-  LessonSummaryData,
-  MatchingPairsExercise,
-  VocabularyPair,
-  WritingExercise,
+  type Exercise,
+  type ExerciseResult,
+  type LessonProgress,
+  type LessonSummaryData,
+  type MatchingPairsExercise,
+  type VocabularyPair,
+  type WritingExercise,
 } from "@easy-lingo/shared";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -86,7 +86,7 @@ export default function Lesson({
 
         exercises.push({
           id: `exercise-${i}`,
-          type: "matching_pairs" as ExerciseType.MATCHING_PAIRS,
+          type: ExerciseType.MATCHING_PAIRS,
           pairs: selectedPairs,
         });
       } else {
@@ -95,7 +95,7 @@ export default function Lesson({
 
         exercises.push({
           id: `exercise-${i}`,
-          type: "writing" as ExerciseType.WRITING,
+          type: ExerciseType.WRITING,
           pair: selectedPair,
         });
       }

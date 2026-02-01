@@ -1,7 +1,7 @@
-import type {
-  Exercise,
+import {
   ExerciseType,
-  VocabularyPair,
+  type Exercise,
+  type VocabularyPair,
 } from "@easy-lingo/shared";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
@@ -148,12 +148,12 @@ describe("Lesson", () => {
     const testExercises: Exercise[] = [
       {
         id: "writing-1",
-        type: "writing" as ExerciseType.WRITING,
+        type: ExerciseType.WRITING,
         pair: { id: "1", polish: "kot", english: "cat", level: 1 },
       },
       {
         id: "writing-2",
-        type: "writing" as ExerciseType.WRITING,
+        type: ExerciseType.WRITING,
         pair: { id: "2", polish: "pies", english: "dog", level: 1 },
       },
     ];

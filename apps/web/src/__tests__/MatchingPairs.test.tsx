@@ -1,10 +1,10 @@
-import type { MatchingPairsExercise } from "@easy-lingo/shared";
+import { ExerciseType, type MatchingPairsExercise } from "@easy-lingo/shared";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MatchingPairs from "../components/exercises/MatchingPairs";
 
 const mockExercise: MatchingPairsExercise = {
   id: "test-exercise",
-  type: "matching_pairs" as const,
+  type: ExerciseType.MATCHING_PAIRS,
   pairs: [
     { id: "1", polish: "kot", english: "cat", level: 1 },
     { id: "2", polish: "pies", english: "dog", level: 1 },

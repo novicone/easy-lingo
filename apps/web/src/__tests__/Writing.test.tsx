@@ -1,10 +1,10 @@
-import type { WritingExercise } from "@easy-lingo/shared";
+import { ExerciseType, type WritingExercise } from "@easy-lingo/shared";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import Writing from "../components/exercises/Writing";
 
 const mockExercise: WritingExercise = {
   id: "test-exercise",
-  type: "writing" as const,
+  type: ExerciseType.WRITING,
   pair: { id: "1", polish: "kot", english: "cat", level: 1 },
 };
 
@@ -192,13 +192,13 @@ describe("Writing", () => {
     const onComplete = vi.fn();
     const firstExercise: WritingExercise = {
       id: "exercise-1",
-      type: "writing" as const,
+      type: ExerciseType.WRITING,
       pair: { id: "1", polish: "kot", english: "cat", level: 1 },
     };
 
     const secondExercise: WritingExercise = {
       id: "exercise-2",
-      type: "writing" as const,
+      type: ExerciseType.WRITING,
       pair: { id: "2", polish: "pies", english: "dog", level: 1 },
     };
 
