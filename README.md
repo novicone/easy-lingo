@@ -22,6 +22,8 @@ easy-lingo/
 ### Frontend (`apps/web`)
 
 - **React 18** + **TypeScript** — UI framework
+- **React Router DOM 7** — routing między stronami
+- **Tailwind CSS** — utility-first styling
 - **Vite 5** — build tool i dev server
 - **Vitest** + **@testing-library/react** — testy jednostkowe
 - Proxy `/api` → `http://localhost:4000` (backend) skonfigurowany w `vite.config.ts`
@@ -31,10 +33,15 @@ easy-lingo/
 - **Fastify** + **TypeScript** — HTTP server
 - **ts-node-dev** — hot reload w dev
 - Porty: `4000` (API)
+- Statyczne dane słownictwa w `src/data/vocabulary.json`
 
 ### Shared (`packages/shared`)
 
-- Wspólne interfejsy TypeScript (np. `LessonSummary`, `Lesson`)
+- Wspólne interfejsy TypeScript:
+  - `LessonSummary`, `Lesson` — metadane lekcji
+  - `VocabularyPair` — pary słów (polski/angielski)
+  - `Exercise`, `ExerciseType` — definicje ćwiczeń
+  - `LessonProgress`, `ExerciseResult` — tracking postępu
 - Używane zarówno przez frontend jak i backend
 
 ### DevTools
@@ -131,38 +138,80 @@ Po otwarciu projektu, zainstaluj rekomendowane rozszerzenia i wykonaj "TypeScrip
 ```
 src/
 ├── pages/
-│   ├── Home.tsx           # Strona główna
-│   └── Lesson.tsx         # Strona lekcji
-├── components/            # (placeholder)
+│   ├── Home.tsx           # Ekran główny (przycisk startu, licznik lekcji)
+│   └── Lesson.tsx         # Logika lekcji (generowanie ćwiczeń, timer, nawigacja)
+├── components/
+│   ├── exercises/
+│   │   ├── MatchingPairs.tsx  # Ćwiczenie: łączenie par słów
+│   │   └── Writing.tsx        # Ćwiczenie: pisanie tłumaczeń
+│   ├── ExerciseSuccess.tsx    # Ekran pochwały po poprawnej odpowiedzi
+│   └── LessonSummary.tsx      # Podsumowanie lekcji (wynik, czas, statystyki)
 ├── styles/
-│   └── index.css          # Minimalne globalne style
+│   └── index.css          # Tailwind CSS + custom styles
 ├── __tests__/             # Testy
 ├── main.tsx               # Entry point
-└── App.tsx                # Root component
+└── App.tsx                # React Router setup (/, /lesson)
 ```
 
 ### Backend (`services/api/src`)
 
 ```
 src/
-└── index.ts               # Fastify server z /health i /api/lessons
+├── index.ts               # Fastify server z endpointami:
+│                          # GET /health, GET /api/lessons, GET /api/vocabulary, GET /api/lessons/:id
+└── data/
+    └── vocabulary.json    # Statyczny plik z 30 parami słów (poziom 1)
 ```
+
+## ✨ Funkcjonalność
+
+### Ekran główny (`/`)
+
+- Przycisk "Rozpocznij lekcję"
+- Licznik ukończonych lekcji (localStorage)
+- Informacje o zasadach działania
+
+### Lekcja (`/lesson`)
+
+- **Losowa liczba ćwiczeń**: 5-10 ćwiczeń na lekcję
+- **Losowy typ ćwiczenia**: łączenie par lub pisanie tłumaczeń
+- **Pasek postępu**: liczba ćwiczeń, licznik poprawnych odpowiedzi
+- **Timer**: mierzenie czasu od rozpoczęcia do zakończenia
+- **Podsumowanie**: wynik procentowy, czas, statystyki
+
+### Ćwiczenie: Łączenie par
+
+- Dwie kolumny: polska i angielska (angielska losowo przetasowana)
+- Zaznaczanie par przez kliknięcie
+- Walidacja: poprawne pary się wyszarzają, błędne podświetlają na czerwono
+- Ekran pochwały po zakończeniu
+
+### Ćwiczenie: Pisanie
+
+- Wyświetlenie polskiego słowa
+- Pole tekstowe do wpisania angielskiego tłumaczenia
+- Przycisk "Sprawdź"
+- Walidacja: poprawne → ekran pochwały, błędne → ekran z poprawną odpowiedzią
 
 ## 🔮 Planowane funkcje
 
-- [ ] ESLint + Prettier (konfiguracja root)
-- [ ] Tailwind CSS (stylowanie)
-- [ ] React Router (routing)
-- [ ] Zustand lub Context (state management)
-- [ ] Baza danych (SQLite + Prisma)
-- [ ] Autentykacja
-- [ ] Ćwiczenia językowe (słownictwo, gramatyka)
-- [ ] System postępów użytkownika
+- [ ] ~~ESLint + Prettier (konfiguracja root)~~
+- [x] ~~Tailwind CSS (stylowanie)~~ ✅
+- [x] ~~React Router (routing)~~ ✅
+- [x] ~~State management~~ ✅ (localStorage)
+- [ ] Baza danych (SQLite + Prisma) — persystencja postępu
+- [ ] System poziomów trudności — wybór poziomu na ekranie głównym
+- [ ] Więcej typów ćwiczeń (wybór wielokrotny, słuchanie)
+- [ ] Statystyki użytkownika (wykres postępów, seria dni)
+- [ ] Responsywność mobilna
+- [ ] Autentykacja użytkowników
 
 ## 📚 Dodatkowe informacje
 
 - **Monorepo**: wykorzystuje pnpm workspaces (`pnpm-workspace.yaml`)
 - **Dev dependencies**: TypeScript, Vitest, @types/jest (workaround dla IDE) w root `package.json`
+- **Stylowanie**: Tailwind CSS z gradientowym tłem, responsywnymi kartami i animacjami
+- **Persystencja**: localStorage dla licznika lekcji (przyszłość: backend + baza danych)
 - **Wspólne typy**: pakiet `@easy-lingo/shared` importowany jako `@easy-lingo/shared`
 - **Proxy**: frontend proxy `/api` → backend `http://localhost:4000`
 

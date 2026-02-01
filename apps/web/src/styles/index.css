@@ -1,3 +1,12 @@
-/* Minimal styles — replace with Tailwind later if desired */
-html,body,#root{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,system-ui,-apple-system,'Helvetica Neue',Arial}
-.app-root{max-width:900px;margin:0 auto}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+body {
+  @apply bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen;
+}
+
+#root {
+  @apply min-h-screen;
+}
