@@ -26,9 +26,7 @@ interface LessonProps {
   exercises?: Exercise[]; // For tests - if provided, skips random generation
 }
 
-export default function Lesson({
-  exercises: providedExercises,
-}: LessonProps = {}) {
+export default function Lesson({ exercises: providedExercises }: LessonProps = {}) {
   const navigate = useNavigate();
   const [state, setState] = useState<LessonState>(LessonState.LOADING);
   const [progress, setProgress] = useState<LessonProgress | null>(null);
@@ -144,10 +142,7 @@ export default function Lesson({
   };
 
   const moveToNextExercise = (currentProgress: LessonProgress) => {
-    if (
-      currentProgress.currentExerciseIndex >=
-      currentProgress.exercises.length - 1
-    ) {
+    if (currentProgress.currentExerciseIndex >= currentProgress.exercises.length - 1) {
       // Last exercise - show summary
       const endTime = Date.now();
       const updatedProgress = { ...currentProgress, endTime };
@@ -165,9 +160,7 @@ export default function Lesson({
 
   const handleLessonComplete = () => {
     // Increment completed lessons counter in localStorage
-    const completedLessons = parseInt(
-      localStorage.getItem("completedLessons") || "0",
-    );
+    const completedLessons = parseInt(localStorage.getItem("completedLessons") || "0");
     localStorage.setItem("completedLessons", (completedLessons + 1).toString());
   };
 
@@ -183,9 +176,7 @@ export default function Lesson({
   }
 
   if (state === LessonState.SUMMARY && progress) {
-    const totalTime = Math.floor(
-      (progress.endTime! - progress.startTime) / 1000,
-    );
+    const totalTime = Math.floor((progress.endTime! - progress.startTime) / 1000);
     const correctCount = progress.results.filter((r) => r.correct).length;
 
     const summary: LessonSummaryData = {
@@ -194,9 +185,7 @@ export default function Lesson({
       totalTime,
     };
 
-    return (
-      <LessonSummary summary={summary} onComplete={handleLessonComplete} />
-    );
+    return <LessonSummary summary={summary} onComplete={handleLessonComplete} />;
   }
 
   if (showSuccess) {
@@ -215,8 +204,7 @@ export default function Lesson({
       <div className="max-w-4xl mx-auto px-6 mb-6">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-gray-600">
-            Ćwiczenie {progress.currentExerciseIndex + 1} z{" "}
-            {progress.exercises.length}
+            Ćwiczenie {progress.currentExerciseIndex + 1} z {progress.exercises.length}
           </span>
           <span className="text-sm text-gray-600">
             Poprawne: {progress.results.filter((r) => r.correct).length}
@@ -233,14 +221,14 @@ export default function Lesson({
       </div>
 
       {/* Current exercise */}
-      {currentExercise.type === "matching_pairs" && (
+      {currentExercise.type === ExerciseType.MATCHING_PAIRS && (
         <MatchingPairs
           key={currentExercise.id}
           exercise={currentExercise as MatchingPairsExercise}
           onComplete={handleExerciseComplete}
         />
       )}
-      {currentExercise.type === "writing" && (
+      {currentExercise.type === ExerciseType.WRITING && (
         <Writing
           key={currentExercise.id}
           exercise={currentExercise as WritingExercise}

@@ -1,6 +1,7 @@
-import { LessonSummary, VocabularyPair } from "@easy-lingo/shared";
+import { VocabularyPair } from "@easy-lingo/shared";
 import Fastify from "fastify";
 import * as fs from "fs";
+import Parse from "papaparse";
 import * as path from "path";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -10,15 +11,21 @@ const __dirname = dirname(__filename);
 
 const server = Fastify({ logger: true });
 
-// Load vocabulary from JSON file
+// Load vocabulary from CSV file
 let vocabulary: VocabularyPair[] = [];
 const vocabularyPath = path.join("data", "vocabulary.json");
 try {
-  const vocabularyData = fs.readFileSync(
-    path.join(__dirname, vocabularyPath),
-    "utf-8",
+  const unit4VocabularyPath = path.join("data", "unit4_vocabulary.csv");
+  const unit4VocabularyParseResult = Parse.parse<VocabularyPair>(
+    fs.readFileSync(path.join(__dirname, unit4VocabularyPath), "utf-8"),
+    { header: true, skipEmptyLines: true },
   );
-  vocabulary = JSON.parse(vocabularyData);
+  vocabulary = unit4VocabularyParseResult.data.map((entry, index) => ({
+    id: (index + 1).toString(),
+    polish: entry.polish,
+    english: entry.english,
+    level: 4,
+  }));
   console.log(`Loaded ${vocabulary.length} vocabulary pairs`);
 } catch (error) {
   console.error(
@@ -29,27 +36,8 @@ try {
 
 server.get("/health", async () => ({ status: "ok" }));
 
-server.get("/api/lessons", async (): Promise<LessonSummary[]> => {
-  return [
-    { id: "l1", title: "Basics", description: "Podstawowe słownictwo" },
-    { id: "l2", title: "Phrases", description: "Przydatne zwroty" },
-  ];
-});
-
 server.get("/api/vocabulary", async (): Promise<VocabularyPair[]> => {
   return vocabulary;
-});
-
-server.get("/api/lessons/:id", async (request) => {
-  const { id } = request.params as { id: string };
-
-  // For now, return basic lesson info
-  return {
-    id,
-    title: id === "l1" ? "Basics" : "Phrases",
-    description: id === "l1" ? "Podstawowe słownictwo" : "Przydatne zwroty",
-    content: "Lesson content placeholder",
-  };
 });
 
 const start = async () => {

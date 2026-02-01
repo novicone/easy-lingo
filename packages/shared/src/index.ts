@@ -20,8 +20,8 @@ export interface VocabularyPair {
 
 // Exercise types
 export enum ExerciseType {
-  MATCHING_PAIRS = "matching_pairs",
-  WRITING = "writing",
+  MATCHING_PAIRS,
+  WRITING,
 }
 
 export interface BaseExercise {
