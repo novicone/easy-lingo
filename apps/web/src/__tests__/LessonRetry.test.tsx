@@ -2,7 +2,6 @@ import { ExerciseType, type Exercise } from "@easy-lingo/shared";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
 import Lesson from "../pages/Lesson";
 
 // Mock fetch for vocabulary API

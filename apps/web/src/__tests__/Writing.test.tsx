@@ -1,5 +1,6 @@
 import { ExerciseType, type WritingExercise } from "@easy-lingo/shared";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import Writing from "../components/exercises/Writing";
 
 const mockExercise: WritingExercise = {
@@ -35,9 +36,7 @@ describe("Writing", () => {
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
-    expect(
-      screen.getByRole("button", { name: /sprawdź/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sprawdź/i })).toBeInTheDocument();
   });
 
   it("check button is disabled when input is empty", () => {
@@ -48,29 +47,29 @@ describe("Writing", () => {
     expect(button).toBeDisabled();
   });
 
-  it("check button is enabled when input has text", () => {
+  it("check button is enabled when input has text", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
     const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i);
     const button = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "cat" } });
+    await user.type(input, "cat");
 
     expect(button).not.toBeDisabled();
   });
 
   it("calls onComplete with true for correct answer", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
-    const input = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     const button = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "cat" } });
-    fireEvent.click(button);
+    await user.type(input, "cat");
+    await user.click(button);
 
     // Should call onComplete immediately with true
     await waitFor(() => {
@@ -79,16 +78,15 @@ describe("Writing", () => {
   });
 
   it("accepts case-insensitive answers", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
-    const input = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     const button = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "CAT" } });
-    fireEvent.click(button);
+    await user.type(input, "CAT");
+    await user.click(button);
 
     // Should call onComplete with true
     await waitFor(() => {
@@ -97,16 +95,15 @@ describe("Writing", () => {
   });
 
   it("trims whitespace from answer", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
-    const input = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     const button = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "  cat  " } });
-    fireEvent.click(button);
+    await user.type(input, "  cat  ");
+    await user.click(button);
 
     // Should call onComplete with true
     await waitFor(() => {
@@ -115,14 +112,15 @@ describe("Writing", () => {
   });
 
   it("shows error screen for incorrect answer", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
     const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i);
     const button = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "dog" } });
-    fireEvent.click(button);
+    await user.type(input, "dog");
+    await user.click(button);
 
     await waitFor(() => {
       expect(screen.getByText(/nie do końca/i)).toBeInTheDocument();
@@ -143,35 +141,34 @@ describe("Writing", () => {
   });
 
   it("calls onComplete with false when clicking continue after wrong answer", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
     const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i);
     const checkButton = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "dog" } });
-    fireEvent.click(checkButton);
+    await user.type(input, "dog");
+    await user.click(checkButton);
 
     await waitFor(() => {
       expect(screen.getByText(/nie do końca/i)).toBeInTheDocument();
     });
 
     const continueButton = screen.getByRole("button", { name: /dalej/i });
-    fireEvent.click(continueButton);
+    await user.click(continueButton);
 
     expect(onComplete).toHaveBeenCalledWith(false);
   });
 
   it("submits answer on Enter key press", async () => {
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
-    const input = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
 
-    fireEvent.change(input, { target: { value: "cat" } });
-    fireEvent.keyPress(input, { key: "Enter", code: "Enter", charCode: 13 });
+    await user.type(input, "cat{Enter}");
 
     // Should call onComplete with true
     await waitFor(() => {
@@ -179,7 +176,7 @@ describe("Writing", () => {
     });
   });
 
-  it("resets component state when key prop changes", () => {
+  it("resets component state when key prop changes", async () => {
     // This is a regression test for the state persistence bug.
     // When a user answered incorrectly in one Writing exercise and moved to
     // the next Writing exercise, the input field retained the wrong answer.
@@ -189,6 +186,7 @@ describe("Writing", () => {
     //
     // This test verifies that changing the key prop resets internal state.
 
+    const user = userEvent.setup();
     const onComplete = vi.fn();
     const firstExercise: WritingExercise = {
       id: "exercise-1",
@@ -204,42 +202,28 @@ describe("Writing", () => {
 
     // Render first exercise
     const { rerender } = render(
-      <Writing
-        key={firstExercise.id}
-        exercise={firstExercise}
-        onComplete={onComplete}
-      />,
+      <Writing key={firstExercise.id} exercise={firstExercise} onComplete={onComplete} />,
     );
 
-    const input1 = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const input1 = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
 
     // User enters wrong answer
-    fireEvent.change(input1, { target: { value: "wronganswer" } });
+    await user.type(input1, "wronganswer");
     expect(input1.value).toBe("wronganswer");
 
     // Click check button
     const button1 = screen.getByRole("button", { name: /sprawdź/i });
-    fireEvent.click(button1);
+    await user.click(button1);
 
     // Error screen appears
     expect(screen.getByText(/nie do końca/i)).toBeInTheDocument();
 
     // Now simulate moving to next exercise by changing key prop
     // This simulates what Lesson.tsx does: <Writing key={currentExercise.id} ... />
-    rerender(
-      <Writing
-        key={secondExercise.id}
-        exercise={secondExercise}
-        onComplete={onComplete}
-      />,
-    );
+    rerender(<Writing key={secondExercise.id} exercise={secondExercise} onComplete={onComplete} />);
 
     // CRITICAL: The input field should be empty because component was remounted
-    const input2 = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const input2 = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     expect(input2.value).toBe("");
 
     // Button should be disabled (because input is empty)

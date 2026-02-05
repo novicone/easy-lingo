@@ -1,9 +1,6 @@
-import {
-  ExerciseType,
-  type Exercise,
-  type VocabularyPair,
-} from "@easy-lingo/shared";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { ExerciseType, type Exercise, type VocabularyPair } from "@easy-lingo/shared";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import Lesson from "../pages/Lesson";
@@ -79,9 +76,7 @@ describe("Lesson", () => {
 
     // Wait for loading to finish
     await waitFor(() => {
-      expect(
-        screen.queryByText(/przygotowuję lekcję/i),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/przygotowuję lekcję/i)).not.toBeInTheDocument();
     });
 
     // Should display either matching pairs or writing exercise
@@ -105,9 +100,7 @@ describe("Lesson", () => {
     renderWithRouter(<Lesson />);
 
     await waitFor(() => {
-      expect(
-        screen.queryByText(/przygotowuję lekcję/i),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/przygotowuję lekcję/i)).not.toBeInTheDocument();
     });
 
     // Check progress bar text for exercise count
@@ -125,22 +118,20 @@ describe("Lesson", () => {
     renderWithRouter(<Lesson />);
 
     await waitFor(() => {
-      expect(
-        screen.queryByText(/przygotowuję lekcję/i),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/przygotowuję lekcję/i)).not.toBeInTheDocument();
     });
 
     // At least one word from vocabulary should be visible
     const hasVocabularyWord = mockVocabulary.some(
       (pair) =>
-        screen.queryByText(pair.polish) !== null ||
-        screen.queryByText(pair.english) !== null,
+        screen.queryByText(pair.polish) !== null || screen.queryByText(pair.english) !== null,
     );
 
     expect(hasVocabularyWord).toBe(true);
   });
 
   it("resets Writing component state between consecutive Writing exercises", async () => {
+    const user = userEvent.setup();
     // Scenario: two consecutive Writing exercises
     // User answers first incorrectly → moves to second
     // Component state should be reset (thanks to key prop)
@@ -175,8 +166,8 @@ describe("Lesson", () => {
     const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i);
     const checkButton = screen.getByRole("button", { name: /sprawdź/i });
 
-    fireEvent.change(input, { target: { value: "wronganswer" } });
-    fireEvent.click(checkButton);
+    await user.type(input, "wronganswer");
+    await user.click(checkButton);
 
     // Wait for error screen
     await waitFor(() => {
@@ -185,7 +176,7 @@ describe("Lesson", () => {
 
     // Click "Continue" to move to second exercise
     const continueButton = screen.getByRole("button", { name: /dalej/i });
-    fireEvent.click(continueButton);
+    await user.click(continueButton);
 
     // KEY TEST: without key prop, Writing component is NOT reset
     // and still shows error screen instead of form with new word
@@ -198,9 +189,7 @@ describe("Lesson", () => {
     });
 
     // Input should be empty and not contain "wronganswer"
-    const newInput = screen.getByPlaceholderText(
-      /wpisz tłumaczenie/i,
-    ) as HTMLInputElement;
+    const newInput = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     expect(newInput.value).toBe("");
     expect(newInput.value).not.toBe("wronganswer");
   });

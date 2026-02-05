@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import ExerciseSuccess from "../components/ExerciseSuccess";
 
 describe("ExerciseSuccess", () => {
@@ -51,12 +52,13 @@ describe("ExerciseSuccess", () => {
     expect(screen.getByRole("button", { name: /dalej/i })).toBeInTheDocument();
   });
 
-  it("calls onContinue when button is clicked", () => {
+  it("calls onContinue when button is clicked", async () => {
+    const user = userEvent.setup();
     const onContinue = vi.fn();
     render(<ExerciseSuccess onContinue={onContinue} />);
 
     const button = screen.getByRole("button", { name: /dalej/i });
-    fireEvent.click(button);
+    await user.click(button);
 
     expect(onContinue).toHaveBeenCalledTimes(1);
   });

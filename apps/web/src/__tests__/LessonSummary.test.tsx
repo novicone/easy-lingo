@@ -1,5 +1,6 @@
 import type { LessonSummaryData } from "@easy-lingo/shared";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import LessonSummary from "../components/LessonSummary";
@@ -31,9 +32,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/lekcja ukończona/i)).toBeInTheDocument();
   });
@@ -46,9 +45,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText("4 / 5")).toBeInTheDocument();
     expect(screen.getByText("80%")).toBeInTheDocument();
@@ -62,9 +59,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/2 min 5 sek/i)).toBeInTheDocument();
   });
@@ -77,9 +72,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/45 sek/i)).toBeInTheDocument();
     expect(screen.queryByText(/min/i)).not.toBeInTheDocument();
@@ -93,9 +86,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText("7")).toBeInTheDocument(); // Correct
     expect(screen.getByText("3")).toBeInTheDocument(); // Incorrect (10-7)
@@ -109,9 +100,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/perfekcyjnie/i)).toBeInTheDocument();
   });
@@ -124,9 +113,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/świetna robota/i)).toBeInTheDocument();
   });
@@ -139,9 +126,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/dobra robota/i)).toBeInTheDocument();
   });
@@ -154,9 +139,7 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/nie poddawaj się/i)).toBeInTheDocument();
   });
@@ -169,16 +152,13 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
-    expect(
-      screen.getByRole("button", { name: /powrót do ekranu głównego/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /powrót do ekranu głównego/i })).toBeInTheDocument();
   });
 
-  it("calls onComplete and navigates to home when return button is clicked", () => {
+  it("calls onComplete and navigates to home when return button is clicked", async () => {
+    const user = userEvent.setup();
     const summary: LessonSummaryData = {
       totalExercises: 5,
       correctExercises: 4,
@@ -186,14 +166,12 @@ describe("LessonSummary", () => {
     };
     const onComplete = vi.fn();
 
-    renderWithRouter(
-      <LessonSummary summary={summary} onComplete={onComplete} />,
-    );
+    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     const button = screen.getByRole("button", {
       name: /powrót do ekranu głównego/i,
     });
-    fireEvent.click(button);
+    await user.click(button);
 
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith("/");
