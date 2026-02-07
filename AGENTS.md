@@ -1,223 +1,80 @@
-# Instrukcje dla agentów AI
+# Agent Instructions
 
-## 📋 Zasady ogólne
+> [README.md](README.md) contains: monorepo structure, stack, install/run/test commands, and ports.
 
-1. **ZAWSZE czytaj [README.md](README.md) na początku sesji** — zawiera aktualny opis projektu, stacku technicznego, struktury katalogów i instrukcji uruchomieniowych.
+## 🚫 Constraints
 
-2. **Testy są OBOWIĄZKOWE**:
-   - Pisz testy PODCZAS implementacji komponentów/funkcji, nie po
-   - Każdy nowy komponent React wymaga testów (@testing-library/react)
-   - Każda nowa funkcja logiki biznesowej wymaga testów jednostkowych
-   - Uruchom `pnpm --filter @easy-lingo/web test` PRZED zakończeniem pracy
+- **Tests are mandatory**: Write tests alongside implementation, not after
+- **Run tests before finishing**: Tests must pass
+- **Never use `rootDir`** in workspace package tsconfig files (breaks shared package imports)
+- **Use Polish for UI text**, English for code/comments
 
-3. **Aktualizuj oba pliki**: gdy dokonujesz istotnych zmian w projekcie (nowy stack, zmiana struktury, dodanie funkcji):
-   - Zaktualizuj [README.md](README.md) — dokumentacja dla ludzi i agentów
-   - Zaktualizuj [AGENTS.md](AGENTS.md) (ten plik) — jeśli pojawiają się nowe wzorce/decyzje architektoniczne
+## 📐 Conventions
 
-4. **Przestrzegaj ustalonych konwencji** opisanych poniżej.
+### Testing
 
-## 🏗️ Architektura i struktura
+- **Framework**: Vitest with `@testing-library/react` and `@testing-library/user-event`
+- **Always use `userEvent`**, never `fireEvent`:
+  ```typescript
+  const user = userEvent.setup();
+  await user.click(button);
+  await user.type(input, "text");
+  ```
+- **Global test API**: `describe`, `it`, `expect`, `vi` available without imports (configured via `vitest/globals` in root tsconfig)
+- **Dependency injection**: Use optional props for deterministic tests:
+  ```typescript
+  // Component accepts optional test data
+  function Lesson({ exercises }: { exercises?: Exercise[] }) {
+    const generated = exercises || generateRandomExercises();
+  }
+  ```
 
-### Monorepo pnpm
+### React Patterns
 
-- Projekt używa **pnpm workspaces** (`pnpm-workspace.yaml`)
-- Workspace packages: `apps/*`, `services/*`, `packages/*`
-- Root `package.json` zawiera tylko devDependencies wspólne dla całego monorepo i skrypty orkiestracyjne
+- **Force component remount** with `key` prop when same component type renders consecutively:
+  ```tsx
+  <Writing key={currentExercise.id} exercise={currentExercise} />
+  ```
+  Without this, React reuses the component instance and old state persists.
 
-### Packages
+### Monorepo
 
-- **`apps/web`**: frontend React + Vite + TypeScript
-- **`services/api`**: backend Fastify + TypeScript
-- **`packages/shared`**: wspólne typy TypeScript używane przez frontend i backend
+- **Import shared types**: `import { Exercise } from "@easy-lingo/shared";`
 
-### TypeScript config
+## ⚠️ Gotchas
 
-- Root `tsconfig.json`:
-  - `types: ["vitest/globals", "node"]` — globalne API testowe
-  - `typeRoots` wskazuje na `node_modules` w workspace packages
-  - `paths`: alias `@easy-lingo/shared` → `packages/shared/src`
-- `apps/web/tsconfig.json`:
-  - Extends root
-  - Dodaje `"vite/client"` do `types`
-- `services/api/tsconfig.json`:
-  - Extends root
-  - Nadpisuje `types: ["node"]` (backend nie potrzebuje vitest globals)
-  - **Nie ustawiaj `rootDir`** — pozwala to importować `@easy-lingo/shared` bez błędów
+### TypeScript in workspace packages
 
-### Testy
+**Problem**: `File is not under 'rootDir'` when importing from `@easy-lingo/shared`
 
-- Framework: **Vitest** z `@testing-library/react`
-- Globalne API testowe (`describe/it/expect`) dostępne dzięki `vitest/globals` w root tsconfig
-- Setup: `apps/web/src/setupTests.ts` importuje `@testing-library/jest-dom`
-- Workaround: `@types/jest` w root devDependencies (dla lepszej integracji IDE)
-- **Pokrycie testów**: Comprehensive test coverage dla wszystkich komponentów (Home, Lesson, MatchingPairs, Writing, ExerciseSuccess, LessonSummary)
-- **Wzorce testowania**: Dependency injection (opcjonalny `exercises` prop) pozwala na deterministyczne testy bez mockowania randomizacji
+**Solution**: Don't set `rootDir` in workspace tsconfig. TypeScript auto-detects common root.
 
-## 🔧 Konwencje developerskie
+### React state not resetting
 
-### Skrypty
+**Problem**: When rendering `Writing → Writing` exercises, old state (`answer`, `showResult`) persists.
 
-- `pnpm dev` — uruchamia frontend i backend równolegle
-- `pnpm dev:web` — uruchamia tylko frontend
-- `pnpm dev:api` — uruchamia tylko backend
-- `pnpm --filter @easy-lingo/web test` — uruchamia testy webowe
-- `pnpm --filter @easy-lingo/web test run` — uruchamia testy jednokrotnie (CI mode)
+**Why**: React keeps same component instance when type doesn't change.
 
-### Dodawanie zależności
+**Solution**: Add `key` prop with unique ID to force new instance.
 
-- **Dla workspace packages**: `pnpm add <package> --filter @easy-lingo/web`
-- **Dla root (devDependencies)**: `pnpm add -D -w <package>`
+### Vitest globals in VS Code
 
-### Importy wspólnych typów
+**Problem**: TypeScript doesn't recognize `describe`, `it`, `expect` without imports.
 
-```typescript
-import { LessonSummary } from "@easy-lingo/shared";
-```
+**Solution**: Already configured:
 
-### Proxy API
+- `apps/web/tsconfig.json` has `types: ["vitest/globals", "node", "vite/client"]`
+- `@types/jest` in root devDependencies (IDE workaround)
+- Backend overrides with `types: ["node"]` only (no vitest globals)
 
-- Frontend ma proxy `/api` → `http://localhost:4000` w `vite.config.ts`
-- Backend używa portu `4000`
+### ES Modules `__dirname`
 
-## 🐛 Znane problemy i rozwiązania
+**Problem**: `__dirname` undefined in ES modules.
 
-### Problem: TypeScript w VS Code nie widzi `describe/it/expect`
-
-**Rozwiązanie zastosowane**:
-
-- `vitest/globals` w root `tsconfig.json` `types`
-- `@types/jest` jako workaround w root `devDependencies`
-- `typeRoots` wskazuje na `node_modules` w workspace packages
-- Backend (`services/api`) nadpisuje `types: ["node"]`
-
-### Problem: "Cannot find type definition file for 'vite/client'"
-
-**Rozwiązanie**:
-
-- Zainstaluj `vite` jako devDependency w `apps/web`
-- Dodaj `"vite/client"` do `types` w `apps/web/tsconfig.json`
-
-### Problem: pnpm nie rozpoznaje workspace
-
-**Rozwiązanie**:
-
-- Użyj `pnpm-workspace.yaml` zamiast `workspaces` w `package.json`
-- Format: `packages: ['apps/*', 'services/*', 'packages/*']`
-
-### Problem: File is not under 'rootDir' przy imporcie z `@easy-lingo/shared`
-
-**Rozwiązanie**:
-
-- Usuń `rootDir` z `services/api/tsconfig.json` (lub innych workspace packages)
-- TypeScript automatycznie określi wspólny root dla wszystkich importowanych plików
-- Pozwala to importować typy z `packages/shared` bez błędów kompilacji
-
-### Problem: Stan React komponentu persystuje między kolejnymi renderami tego samego typu
-
-**Symptom**: Przy kolejnych ćwiczeniach tego samego typu (np. Writing → Writing), stary stan (`answer`, `showResult`) nie był resetowany. React aktualizował istniejący komponent nowymi props zamiast tworzyć nową instancję.
-
-**Rozwiązanie**:
-
-- Dodaj `key={currentExercise.id}` prop do komponentów ćwiczeń w Lesson.tsx
-- React traktuje komponenty z różnymi `key` jako całkowicie nowe instancje
-- Wymusza unmount starej instancji i mount nowej, resetując cały lokalny stan
-- **Pattern**: `<Writing key={currentExercise.id} exercise={...} />`
-
-**Testing pattern**: Dependency injection - Lesson przyjmuje opcjonalny `exercises?: Exercise[]` prop, co pozwala testom przekazać deterministyczną listę ćwiczeń zamiast losowej generacji.
-
-## ✅ Checklist przy commitowaniu
-
-Przed zakończeniem pracy upewnij się, że:
-
-- [ ] Wszystkie nowe komponenty/funkcje mają testy
-- [ ] `pnpm --filter @easy-lingo/web test run` przechodzi bez błędów
-- [ ] Typy w `packages/shared` są zaktualizowane (jeśli dotyczy API/modeli)
-- [ ] README.md jest zaktualizowany (jeśli dodano nowe komendy/funkcje)
-- [ ] AGENTS.md jest zaktualizowany (jeśli dodano nowe wzorce architektoniczne)
-- [ ] VS Code nie pokazuje błędów TypeScript
-- [ ] Kod kompiluje się bez ostrzeżeń
-
-## 📝 Historia zmian architektonicznych
-
-### 2026-01-31: Inicjalizacja projektu
-
-- Setup monorepo pnpm workspaces
-- Scaffold Vite + React + TypeScript (frontend)
-- Scaffold Fastify + TypeScript (backend)
-- Vitest + @testing-library/react (testy)
-- VS Code settings (workspace TypeScript, rekomendowane rozszerzenia)
-- Rozwiązanie problemów z TypeScript globals w IDE (vitest/globals + @types/jest workaround)
-
-### 2026-01-31: Implementacja systemu lekcji i ćwiczeń
-
-- **Zainstalowano zależności**:
-  - React Router DOM 7.13.0 (routing między stronami)
-  - Tailwind CSS + PostCSS + Autoprefixer (stylowanie)
-- **Rozszerzono typy w `packages/shared`**:
-  - `VocabularyPair` — para słów polskie/angielskie z poziomem trudności
-  - `ExerciseType` (enum) — `MATCHING_PAIRS` | `WRITING`
-  - `MatchingPairsExercise`, `WritingExercise` — typy ćwiczeń
-  - `ExerciseResult`, `LessonProgress`, `LessonSummaryData` — tracking postępu
-- **Dodano statyczny plik słownictwa**:
-  - `services/api/src/data/vocabulary.json` — 30 par słów poziomu 1
-- **Komponenty frontend** (`apps/web/src/components/`):
-  - `exercises/MatchingPairs.tsx` — łączenie par (dwie kolumny, walidacja, zaznaczanie)
-  - `exercises/Writing.tsx` — pisanie tłumaczeń (input, sprawdzanie, ekran błędu)
-  - `ExerciseSuccess.tsx` — ekran pochwały po poprawnym ćwiczeniu
-  - `LessonSummary.tsx` — podsumowanie lekcji (wynik, czas, statystyki)
-- **Strony**:
-  - `pages/Home.tsx` — ekran główny z przyciskiem startu i licznikiem lekcji (localStorage)
-  - `pages/Lesson.tsx` — logika lekcji (generowanie 5-10 losowych ćwiczeń, timer, przejścia między ćwiczeniami)
-- **Routing**:
-  - `App.tsx` — `BrowserRouter` z trasami `/` (Home) i `/lesson` (Lesson)
-- **Backend API** (`services/api/src/index.ts`):
-  - `GET /api/vocabulary` — zwraca wszystkie pary słów z JSON
-  - `GET /api/lessons/:id` — zwraca szczegóły lekcji (placeholder)
-  - Wczytywanie `vocabulary.json` przy starcie z użyciem `__dirname` workaround dla ES modules
-- **Stylowanie**:
-  - Tailwind CSS z gradientowym tłem
-  - Responsywne karty, przyciski, animacje
-  - `apps/web/src/styles/index.css` — Tailwind directives
-
-### Problem: `__dirname is not defined` w ES Modules (Node.js)
-
-**Rozwiązanie**:
+**Solution**:
 
 ```typescript
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 ```
-
-### 2026-01-31: Bugfixy i refaktoryzacja testów
-
-- **Bug #1 - Writing component nie wywołuje onComplete**: Komponent Writing nie wywołował `onComplete(true)` dla poprawnych odpowiedzi, przez co rodzic (Lesson) nie mógł pokazać ekranu sukcesu. **Fix**: Dodano `onComplete(true)` w `handleCheck()` gdy `correct === true`.
-
-- **Bug #2 - State persistence między ćwiczeniami**: Stan komponentu Writing (`answer`, `showResult`, `isCorrect`) persystował między kolejnymi ćwiczeniami tego samego typu. React aktualizował istniejący komponent zamiast tworzyć nowy. **Fix**: Dodano `key={currentExercise.id}` do komponentów MatchingPairs i Writing w Lesson.tsx.
-
-- **Refaktoryzacja testowania**: Dodano dependency injection do Lesson - opcjonalny prop `exercises?: Exercise[]` pozwala testom przekazać deterministyczną listę ćwiczeń. Unika potrzeby mockowania `Math.random()` i jest bardziej maintainable.
-
-- **Test regresyjny**: Dodano test "resets Writing component state between consecutive Writing exercises" który:
-  - ❌ Zawodzi bez `key` prop (komponent pokazuje stary stan)
-  - ✅ Przechodzi z `key` prop (komponent jest prawidłowo zresetowany)
-  - Potwierdza że bug został naprawiony i nie wróci
-
-- **Konwencja kodu**: Wszystkie komentarze w kodzie przetłumaczone na angielski dla spójności międzynarodowej.
-
-## 🎯 Najbliższe kroki (TODO)
-
-- ~~ESLint + Prettier (konfiguracja root)~~
-- ~~Tailwind CSS~~ ✅
-- ~~React Router~~ ✅
-- ~~State management (Context/Zustand)~~ ✅ (localStorage dla licznika)
-- Baza danych (SQLite + Prisma) — persystencja postępu użytkownika
-- System poziomów trudności — wybór poziomu na ekranie głównym
-- Więcej typów ćwiczeń (wybór wielokrotny, słuchanie, itp.)
-- Statystyki użytkownika (wykres postępów, seria dni)
-- Responsywność mobilna (dopracowanie layoutu)
-
----
-
-**Pamiętaj**: Ten plik i [README.md](README.md) są źródłem prawdy o projekcie. Aktualizuj je przy istotnych zmianach!
