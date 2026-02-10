@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import RetryIntro from "../components/RetryIntro";
+import { setupUser } from "./testUtils";
 
 describe("RetryIntro", () => {
   it("renders with correct message for single incorrect exercise", () => {
@@ -23,7 +23,7 @@ describe("RetryIntro", () => {
   });
 
   it("calls onContinue when button is clicked", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const mockOnContinue = vi.fn();
 
     render(<RetryIntro incorrectCount={2} onContinue={mockOnContinue} />);

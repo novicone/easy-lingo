@@ -1,33 +1,14 @@
-import { ExerciseType, type Exercise } from "@easy-lingo/shared";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
+import { screen, waitFor } from "@testing-library/react";
 import Lesson from "../pages/Lesson";
-
-// Mock fetch for vocabulary API
-global.fetch = vi.fn();
-
-// Helper to wrap component with router
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+import { createWritingExercise, standardVocabulary } from "./testFixtures";
+import { renderWithRouter, setupUser } from "./testUtils";
 
 describe("Lesson - Retry Functionality", () => {
   it("shows retry intro screen when exercises have incorrect answers", async () => {
-    const user = userEvent.setup();
-
-    // Provide predetermined exercises: 2 writing exercises
-    const exercises: Exercise[] = [
-      {
-        id: "ex1",
-        type: ExerciseType.WRITING,
-        pair: { id: "1", polish: "dom", english: "house" },
-      },
-      {
-        id: "ex2",
-        type: ExerciseType.WRITING,
-        pair: { id: "2", polish: "kot", english: "cat" },
-      },
+    const user = setupUser();
+    const exercises = [
+      createWritingExercise("ex1", standardVocabulary[2]),
+      createWritingExercise("ex2", standardVocabulary[0]),
     ];
 
     renderWithRouter(<Lesson exercises={exercises} />);
@@ -76,19 +57,10 @@ describe("Lesson - Retry Functionality", () => {
   });
 
   it("retries incorrect exercises until all are correct", async () => {
-    const user = userEvent.setup();
-
-    const exercises: Exercise[] = [
-      {
-        id: "ex1",
-        type: ExerciseType.WRITING,
-        pair: { id: "1", polish: "dom", english: "house" },
-      },
-      {
-        id: "ex2",
-        type: ExerciseType.WRITING,
-        pair: { id: "2", polish: "kot", english: "cat" },
-      },
+    const user = setupUser();
+    const exercises = [
+      createWritingExercise("ex1", standardVocabulary[2]),
+      createWritingExercise("ex2", standardVocabulary[0]),
     ];
 
     renderWithRouter(<Lesson exercises={exercises} />);
@@ -200,15 +172,8 @@ describe("Lesson - Retry Functionality", () => {
   });
 
   it("shows summary immediately when all exercises are correct (no retry)", async () => {
-    const user = userEvent.setup();
-
-    const exercises: Exercise[] = [
-      {
-        id: "ex1",
-        type: ExerciseType.WRITING,
-        pair: { id: "1", polish: "dom", english: "house" },
-      },
-    ];
+    const user = setupUser();
+    const exercises = [createWritingExercise("ex1", standardVocabulary[2])];
 
     renderWithRouter(<Lesson exercises={exercises} />);
 
@@ -240,24 +205,11 @@ describe("Lesson - Retry Functionality", () => {
   });
 
   it("retries multiple incorrect exercises in sequence", async () => {
-    const user = userEvent.setup();
-
-    const exercises: Exercise[] = [
-      {
-        id: "ex1",
-        type: ExerciseType.WRITING,
-        pair: { id: "1", polish: "dom", english: "house" },
-      },
-      {
-        id: "ex2",
-        type: ExerciseType.WRITING,
-        pair: { id: "2", polish: "kot", english: "cat" },
-      },
-      {
-        id: "ex3",
-        type: ExerciseType.WRITING,
-        pair: { id: "3", polish: "pies", english: "dog" },
-      },
+    const user = setupUser();
+    const exercises = [
+      createWritingExercise("ex1", standardVocabulary[2]),
+      createWritingExercise("ex2", standardVocabulary[0]),
+      createWritingExercise("ex3", standardVocabulary[1]),
     ];
 
     renderWithRouter(<Lesson exercises={exercises} />);

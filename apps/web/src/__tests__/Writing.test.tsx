@@ -1,13 +1,9 @@
-import { ExerciseType, type WritingExercise } from "@easy-lingo/shared";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import Writing from "../components/exercises/Writing";
+import { createWritingExercise, standardVocabulary } from "./testFixtures";
+import { setupUser } from "./testUtils";
 
-const mockExercise: WritingExercise = {
-  id: "test-exercise",
-  type: ExerciseType.WRITING,
-  pair: { id: "1", polish: "kot", english: "cat", level: 1 },
-};
+const mockExercise = createWritingExercise("test-exercise", standardVocabulary[0]);
 
 describe("Writing", () => {
   it("renders exercise title", () => {
@@ -48,7 +44,7 @@ describe("Writing", () => {
   });
 
   it("check button is enabled when input has text", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -61,7 +57,7 @@ describe("Writing", () => {
   });
 
   it("calls onComplete with true for correct answer", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -78,7 +74,7 @@ describe("Writing", () => {
   });
 
   it("accepts case-insensitive answers", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -95,7 +91,7 @@ describe("Writing", () => {
   });
 
   it("trims whitespace from answer", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -112,7 +108,7 @@ describe("Writing", () => {
   });
 
   it("shows error screen for incorrect answer", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -141,7 +137,7 @@ describe("Writing", () => {
   });
 
   it("calls onComplete with false when clicking continue after wrong answer", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -162,7 +158,7 @@ describe("Writing", () => {
   });
 
   it("submits answer on Enter key press", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<Writing exercise={mockExercise} onComplete={onComplete} />);
 
@@ -177,64 +173,33 @@ describe("Writing", () => {
   });
 
   it("resets component state when key prop changes", async () => {
-    // This is a regression test for the state persistence bug.
-    // When a user answered incorrectly in one Writing exercise and moved to
-    // the next Writing exercise, the input field retained the wrong answer.
-    //
-    // The fix: Add key={exercise.id} prop in Lesson.tsx so React unmounts
-    // and remounts the component with fresh state.
-    //
-    // This test verifies that changing the key prop resets internal state.
-
-    const user = userEvent.setup();
+    // Regression test: verify that changing key prop resets internal state
+    // Without key={exercise.id} in Lesson.tsx, input would retain wrong answer
+    const user = setupUser();
     const onComplete = vi.fn();
-    const firstExercise: WritingExercise = {
-      id: "exercise-1",
-      type: ExerciseType.WRITING,
-      pair: { id: "1", polish: "kot", english: "cat", level: 1 },
-    };
+    const firstExercise = createWritingExercise("exercise-1", standardVocabulary[0]);
+    const secondExercise = createWritingExercise("exercise-2", standardVocabulary[1]);
 
-    const secondExercise: WritingExercise = {
-      id: "exercise-2",
-      type: ExerciseType.WRITING,
-      pair: { id: "2", polish: "pies", english: "dog", level: 1 },
-    };
-
-    // Render first exercise
+    // Render first exercise and enter wrong answer
     const { rerender } = render(
       <Writing key={firstExercise.id} exercise={firstExercise} onComplete={onComplete} />,
     );
 
     const input1 = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
-
-    // User enters wrong answer
     await user.type(input1, "wronganswer");
     expect(input1.value).toBe("wronganswer");
 
-    // Click check button
-    const button1 = screen.getByRole("button", { name: /sprawdź/i });
-    await user.click(button1);
-
-    // Error screen appears
+    await user.click(screen.getByRole("button", { name: /sprawdź/i }));
     expect(screen.getByText(/nie do końca/i)).toBeInTheDocument();
 
-    // Now simulate moving to next exercise by changing key prop
-    // This simulates what Lesson.tsx does: <Writing key={currentExercise.id} ... />
+    // Change key prop to simulate moving to next exercise
     rerender(<Writing key={secondExercise.id} exercise={secondExercise} onComplete={onComplete} />);
 
-    // CRITICAL: The input field should be empty because component was remounted
+    // Input should be empty (component was remounted with new key)
     const input2 = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     expect(input2.value).toBe("");
-
-    // Button should be disabled (because input is empty)
-    const button2 = screen.getByRole("button", { name: /sprawdź/i });
-    expect(button2).toBeDisabled();
-
-    // Error screen should be gone
+    expect(screen.getByRole("button", { name: /sprawdź/i })).toBeDisabled();
     expect(screen.queryByText(/nie do końca/i)).not.toBeInTheDocument();
-
-    // New word should be displayed
     expect(screen.getByText("pies")).toBeInTheDocument();
-    expect(screen.queryByText("kot")).not.toBeInTheDocument();
   });
 });

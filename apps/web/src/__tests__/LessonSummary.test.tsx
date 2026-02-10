@@ -1,13 +1,7 @@
 import type { LessonSummaryData } from "@easy-lingo/shared";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { screen } from "@testing-library/react";
 import LessonSummary from "../components/LessonSummary";
-
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+import { renderWithRouter, setupUser } from "./testUtils";
 
 const mockNavigate = vi.fn();
 
@@ -24,7 +18,7 @@ describe("LessonSummary", () => {
     mockNavigate.mockClear();
   });
 
-  it("renders completion title", () => {
+  it("renders completion title and basic summary info", () => {
     const summary: LessonSummaryData = {
       totalExercises: 5,
       correctExercises: 4,
@@ -35,18 +29,6 @@ describe("LessonSummary", () => {
     renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
 
     expect(screen.getByText(/lekcja ukończona/i)).toBeInTheDocument();
-  });
-
-  it("displays score correctly", () => {
-    const summary: LessonSummaryData = {
-      totalExercises: 5,
-      correctExercises: 4,
-      totalTime: 120,
-    };
-    const onComplete = vi.fn();
-
-    renderWithRouter(<LessonSummary summary={summary} onComplete={onComplete} />);
-
     expect(screen.getByText("4 / 5")).toBeInTheDocument();
     expect(screen.getByText("80%")).toBeInTheDocument();
   });
@@ -158,7 +140,7 @@ describe("LessonSummary", () => {
   });
 
   it("calls onComplete and navigates to home when return button is clicked", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const summary: LessonSummaryData = {
       totalExercises: 5,
       correctExercises: 4,

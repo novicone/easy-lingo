@@ -1,17 +1,9 @@
-import { ExerciseType, type MatchingPairsExercise } from "@easy-lingo/shared";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import MatchingPairs from "../components/exercises/MatchingPairs";
+import { createMatchingPairsExercise, standardVocabulary } from "./testFixtures";
+import { setupUser } from "./testUtils";
 
-const mockExercise: MatchingPairsExercise = {
-  id: "test-exercise",
-  type: ExerciseType.MATCHING_PAIRS,
-  pairs: [
-    { id: "1", polish: "kot", english: "cat", level: 1 },
-    { id: "2", polish: "pies", english: "dog", level: 1 },
-    { id: "3", polish: "dom", english: "house", level: 1 },
-  ],
-};
+const mockExercise = createMatchingPairsExercise("test-exercise", standardVocabulary.slice(0, 3));
 
 describe("MatchingPairs", () => {
   it("renders exercise title", () => {
@@ -47,7 +39,7 @@ describe("MatchingPairs", () => {
   });
 
   it("allows selecting a polish word", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<MatchingPairs exercise={mockExercise} onComplete={onComplete} />);
 
@@ -59,7 +51,7 @@ describe("MatchingPairs", () => {
   });
 
   it("matches correct pairs and greys them out", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<MatchingPairs exercise={mockExercise} onComplete={onComplete} />);
 
@@ -82,7 +74,7 @@ describe("MatchingPairs", () => {
   });
 
   it("highlights incorrect pairs in red and then deselects them", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<MatchingPairs exercise={mockExercise} onComplete={onComplete} />);
 
@@ -111,7 +103,7 @@ describe("MatchingPairs", () => {
   });
 
   it("calls onComplete when all pairs are matched", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<MatchingPairs exercise={mockExercise} onComplete={onComplete} />);
 
@@ -146,7 +138,7 @@ describe("MatchingPairs", () => {
   });
 
   it("does not allow clicking already matched tiles", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onComplete = vi.fn();
     render(<MatchingPairs exercise={mockExercise} onComplete={onComplete} />);
 

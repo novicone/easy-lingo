@@ -35,8 +35,15 @@ pnpm dev              # Frontend (5173) + Backend (4000)
 ### Testy
 
 ```bash
-pnpm --filter @easy-lingo/web test run    # Jednokrotnie
-pnpm --filter @easy-lingo/web test        # Tryb watch
+pnpm test:web run              # Wszystkie testy
+pnpm test:web run -- Lesson   # Konkretny plik
+pnpm test:web                  # Tryb watch
+```
+
+### Sprawdzanie typów
+
+```bash
+pnpm typecheck                 # Sprawdza typy TypeScript bez budowania
 ```
 
 ## 🤖 Dla developerów

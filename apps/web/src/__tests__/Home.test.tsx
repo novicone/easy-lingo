@@ -1,11 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { screen } from "@testing-library/react";
 import Home from "../pages/Home";
-
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+import { renderWithRouter } from "./testUtils";
 
 describe("Home", () => {
   beforeEach(() => {
@@ -19,9 +14,7 @@ describe("Home", () => {
 
   it("displays start lesson button", () => {
     renderWithRouter(<Home />);
-    expect(
-      screen.getByRole("button", { name: /rozpocznij lekcję/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /rozpocznij lekcję/i })).toBeInTheDocument();
   });
 
   it("displays completed lessons counter starting at 0", () => {

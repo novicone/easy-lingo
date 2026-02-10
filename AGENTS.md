@@ -2,6 +2,8 @@
 
 > [README.md](README.md) contains: monorepo structure, stack, install/run/test commands, and ports.
 
+**Avoid duplication**: Don't repeat commands/setup that's already in README. Link to README instead.
+
 ## 🚫 Constraints
 
 - **Tests are mandatory**: Write tests alongside implementation, not after
@@ -14,6 +16,7 @@
 ### Testing
 
 - **Framework**: Vitest with `@testing-library/react` and `@testing-library/user-event`
+- **Test commands**: See [README.md](README.md#testy) for run commands
 - **Always use `userEvent`**, never `fireEvent`:
   ```typescript
   const user = userEvent.setup();
@@ -42,6 +45,18 @@
 - **Import shared types**: `import { Exercise } from "@easy-lingo/shared";`
 
 ## ⚠️ Gotchas
+
+### Terminal context in monorepo
+
+**Problem**: Commands fail with "path does not exist" or execute in wrong directory.
+
+**Why**: PowerShell preserves `cwd` between commands. Relative `cd` compounds paths.
+
+**Solution**: Always reset to root before workspace commands:
+
+```bash
+cd c:\Users\novic\Projects\easy-lingo; pnpm test:web run
+```
 
 ### TypeScript in workspace packages
 

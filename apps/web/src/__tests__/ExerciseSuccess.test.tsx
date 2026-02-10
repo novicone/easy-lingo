@@ -1,13 +1,19 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import ExerciseSuccess from "../components/ExerciseSuccess";
+import { setupUser } from "./testUtils";
 
 describe("ExerciseSuccess", () => {
-  it("renders success message", () => {
+  it("renders success message with praise and emoji", () => {
     const onContinue = vi.fn();
     render(<ExerciseSuccess onContinue={onContinue} />);
 
-    // Should show some praise message (one of the random ones)
+    // Should show celebration emoji
+    expect(screen.getByText("🎉")).toBeInTheDocument();
+
+    // Should show "odpowiedź poprawna" message
+    expect(screen.getByText(/odpowiedź poprawna/i)).toBeInTheDocument();
+
+    // Should show one of the random praise messages
     const praises = [
       /wspaniale/i,
       /doskonale/i,
@@ -31,20 +37,6 @@ describe("ExerciseSuccess", () => {
     expect(hasPraise).toBe(true);
   });
 
-  it("displays celebration emoji", () => {
-    const onContinue = vi.fn();
-    render(<ExerciseSuccess onContinue={onContinue} />);
-
-    expect(screen.getByText("🎉")).toBeInTheDocument();
-  });
-
-  it('displays "odpowiedź poprawna" message', () => {
-    const onContinue = vi.fn();
-    render(<ExerciseSuccess onContinue={onContinue} />);
-
-    expect(screen.getByText(/odpowiedź poprawna/i)).toBeInTheDocument();
-  });
-
   it("displays continue button", () => {
     const onContinue = vi.fn();
     render(<ExerciseSuccess onContinue={onContinue} />);
@@ -53,7 +45,7 @@ describe("ExerciseSuccess", () => {
   });
 
   it("calls onContinue when button is clicked", async () => {
-    const user = userEvent.setup();
+    const user = setupUser();
     const onContinue = vi.fn();
     render(<ExerciseSuccess onContinue={onContinue} />);
 

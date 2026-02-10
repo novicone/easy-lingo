@@ -5,7 +5,9 @@
   "scripts": {
     "dev:web": "pnpm --filter @easy-lingo/web dev",
     "dev:api": "pnpm --filter @easy-lingo/api dev",
-    "dev": "pnpm --parallel --filter @easy-lingo/web --filter @easy-lingo/api dev"
+    "dev": "pnpm --parallel --filter @easy-lingo/web --filter @easy-lingo/api dev",
+    "test:web": "pnpm --filter @easy-lingo/web test",
+    "typecheck": "pnpm --filter @easy-lingo/web typecheck"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

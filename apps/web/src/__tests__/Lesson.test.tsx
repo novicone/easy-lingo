@@ -1,13 +1,12 @@
-import { ExerciseType, type Exercise, type VocabularyPair } from "@easy-lingo/shared";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { screen, waitFor } from "@testing-library/react";
 import Lesson from "../pages/Lesson";
-
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
-};
+import { createWritingExercise, standardVocabulary } from "./testFixtures";
+import {
+  mockVocabularyAPI,
+  mockVocabularyAPIError,
+  renderWithRouter,
+  setupUser,
+} from "./testUtils";
 
 const mockNavigate = vi.fn();
 
@@ -19,38 +18,26 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-// Mock vocabulary API response
-const mockVocabulary: VocabularyPair[] = [
-  { id: "1", polish: "kot", english: "cat", level: 1 },
-  { id: "2", polish: "pies", english: "dog", level: 1 },
-  { id: "3", polish: "dom", english: "house", level: 1 },
-  { id: "4", polish: "woda", english: "water", level: 1 },
-  { id: "5", polish: "jedzenie", english: "food", level: 1 },
-  { id: "6", polish: "dzień", english: "day", level: 1 },
-  { id: "7", polish: "noc", english: "night", level: 1 },
-];
-
 describe("Lesson", () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     localStorage.clear();
-
-    // Mock fetch API
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve(mockVocabulary),
-      }),
-    ) as any;
+    mockVocabularyAPI(standardVocabulary);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("shows loading state initially", () => {
+  it("shows loading state initially", async () => {
     renderWithRouter(<Lesson />);
 
     expect(screen.getByText(/przygotowuję lekcję/i)).toBeInTheDocument();
+
+    // Wait for loading to finish to prevent act() warning
+    await waitFor(() => {
+      expect(screen.queryByText(/przygotowuję lekcję/i)).not.toBeInTheDocument();
+    });
   });
 
   it("fetches vocabulary from API", async () => {
@@ -58,6 +45,11 @@ describe("Lesson", () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith("/api/vocabulary");
+    });
+
+    // Wait for loading to finish to prevent act() warning
+    await waitFor(() => {
+      expect(screen.queryByText(/przygotowuję lekcję/i)).not.toBeInTheDocument();
     });
   });
 
@@ -87,7 +79,7 @@ describe("Lesson", () => {
   });
 
   it("navigates to home on API error", async () => {
-    global.fetch = vi.fn(() => Promise.reject(new Error("API Error"))) as any;
+    mockVocabularyAPIError();
 
     renderWithRouter(<Lesson />);
 
@@ -122,7 +114,7 @@ describe("Lesson", () => {
     });
 
     // At least one word from vocabulary should be visible
-    const hasVocabularyWord = mockVocabulary.some(
+    const hasVocabularyWord = standardVocabulary.some(
       (pair) =>
         screen.queryByText(pair.polish) !== null || screen.queryByText(pair.english) !== null,
     );
@@ -131,64 +123,30 @@ describe("Lesson", () => {
   });
 
   it("resets Writing component state between consecutive Writing exercises", async () => {
-    const user = userEvent.setup();
-    // Scenario: two consecutive Writing exercises
-    // User answers first incorrectly → moves to second
-    // Component state should be reset (thanks to key prop)
-
-    const testExercises: Exercise[] = [
-      {
-        id: "writing-1",
-        type: ExerciseType.WRITING,
-        pair: { id: "1", polish: "kot", english: "cat", level: 1 },
-      },
-      {
-        id: "writing-2",
-        type: ExerciseType.WRITING,
-        pair: { id: "2", polish: "pies", english: "dog", level: 1 },
-      },
+    const user = setupUser();
+    // Scenario: two consecutive Writing exercises with incorrect first answer
+    const testExercises = [
+      createWritingExercise("writing-1", standardVocabulary[0]),
+      createWritingExercise("writing-2", standardVocabulary[1]),
     ];
 
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve(mockVocabulary),
-      }),
-    ) as any;
-
+    mockVocabularyAPI(standardVocabulary);
     renderWithRouter(<Lesson exercises={testExercises} />);
 
-    // Wait for first exercise to load
-    await waitFor(() => {
-      expect(screen.getByText("kot")).toBeInTheDocument();
-    });
+    // Wait for first exercise and answer incorrectly
+    await waitFor(() => expect(screen.getByText("kot")).toBeInTheDocument());
 
-    // Enter wrong answer
-    const input = screen.getByPlaceholderText(/wpisz tłumaczenie/i);
-    const checkButton = screen.getByRole("button", { name: /sprawdź/i });
+    await user.type(screen.getByPlaceholderText(/wpisz tłumaczenie/i), "wronganswer");
+    await user.click(screen.getByRole("button", { name: /sprawdź/i }));
 
-    await user.type(input, "wronganswer");
-    await user.click(checkButton);
+    await waitFor(() => expect(screen.getByText(/nie do końca/i)).toBeInTheDocument());
 
-    // Wait for error screen
-    await waitFor(() => {
-      expect(screen.getByText(/nie do końca/i)).toBeInTheDocument();
-    });
+    // Move to second exercise
+    await user.click(screen.getByRole("button", { name: /dalej/i }));
 
-    // Click "Continue" to move to second exercise
-    const continueButton = screen.getByRole("button", { name: /dalej/i });
-    await user.click(continueButton);
+    // KEY TEST: input should be empty (component was remounted with key prop)
+    await waitFor(() => expect(screen.getByText("pies")).toBeInTheDocument());
 
-    // KEY TEST: without key prop, Writing component is NOT reset
-    // and still shows error screen instead of form with new word
-    // With key prop: we'll see "pies" in the form
-    // Without key prop: we'll see error screen with "dog" (but state showResult=true from first exercise)
-
-    await waitFor(() => {
-      // Should see Polish word "pies" in the form
-      expect(screen.getByText("pies")).toBeInTheDocument();
-    });
-
-    // Input should be empty and not contain "wronganswer"
     const newInput = screen.getByPlaceholderText(/wpisz tłumaczenie/i) as HTMLInputElement;
     expect(newInput.value).toBe("");
     expect(newInput.value).not.toBe("wronganswer");

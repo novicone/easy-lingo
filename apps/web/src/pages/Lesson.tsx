@@ -4,16 +4,14 @@ import {
   type ExerciseResult,
   type LessonProgress,
   type LessonSummaryData,
-  type MatchingPairsExercise,
   type VocabularyPair,
-  type WritingExercise,
 } from "@easy-lingo/shared";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MatchingPairs from "../components/exercises/MatchingPairs";
-import Writing from "../components/exercises/Writing";
+import ExerciseRenderer from "../components/ExerciseRenderer";
 import ExerciseSuccess from "../components/ExerciseSuccess";
 import LessonSummary from "../components/LessonSummary";
+import ProgressBar from "../components/ProgressBar";
 import RetryIntro from "../components/RetryIntro";
 
 enum LessonState {
@@ -142,8 +140,26 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
 
   const handleSuccessContinue = () => {
     setShowSuccess(false);
-    if (progress) {
-      moveToNextExercise(progress);
+    const isRetryMode = state === LessonState.RETRY;
+
+    if (isRetryMode) {
+      // Retry mode: move to next retry exercise or show summary
+      if (retryIndex >= retryExercises.length - 1) {
+        if (progress) {
+          const endTime = Date.now();
+          const updatedProgress = { ...progress, endTime };
+          setProgress(updatedProgress);
+          setState(LessonState.SUMMARY);
+        }
+      } else {
+        setRetryIndex(retryIndex + 1);
+        setState(LessonState.RETRY);
+      }
+    } else {
+      // Normal mode: move to next exercise
+      if (progress) {
+        moveToNextExercise(progress);
+      }
     }
   };
 
@@ -209,24 +225,6 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
     }
   };
 
-  const handleRetrySuccessContinue = () => {
-    setShowSuccess(false);
-
-    if (retryIndex >= retryExercises.length - 1) {
-      // Last retry exercise - show summary
-      if (progress) {
-        const endTime = Date.now();
-        const updatedProgress = { ...progress, endTime };
-        setProgress(updatedProgress);
-        setState(LessonState.SUMMARY);
-      }
-    } else {
-      // Move to next retry exercise
-      setRetryIndex(retryIndex + 1);
-      setState(LessonState.RETRY);
-    }
-  };
-
   const handleLessonComplete = () => {
     // Increment completed lessons counter in localStorage
     const completedLessons = parseInt(localStorage.getItem("completedLessons") || "0");
@@ -258,10 +256,7 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
   }
 
   if (showSuccess) {
-    // Determine which continue handler to use based on state
-    const onContinue =
-      state === LessonState.RETRY ? handleRetrySuccessContinue : handleSuccessContinue;
-    return <ExerciseSuccess onContinue={onContinue} />;
+    return <ExerciseSuccess onContinue={handleSuccessContinue} />;
   }
 
   if (state === LessonState.RETRY_INTRO) {
@@ -275,39 +270,12 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
 
     return (
       <div className="min-h-screen py-8">
-        {/* Progress bar for retries */}
-        <div className="max-w-4xl mx-auto px-6 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">
-              Poprawka {retryIndex + 1} z {retryExercises.length}
-            </span>
-            <span className="text-sm text-yellow-600 font-semibold">Tryb poprawek</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-              style={{
-                width: `${((retryIndex + 1) / retryExercises.length) * 100}%`,
-              }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Current retry exercise */}
-        {currentRetryExercise.type === ExerciseType.MATCHING_PAIRS && (
-          <MatchingPairs
-            key={`${currentRetryExercise.id}-retry-${retryAttempt}`}
-            exercise={currentRetryExercise as MatchingPairsExercise}
-            onComplete={handleRetryComplete}
-          />
-        )}
-        {currentRetryExercise.type === ExerciseType.WRITING && (
-          <Writing
-            key={`${currentRetryExercise.id}-retry-${retryAttempt}`}
-            exercise={currentRetryExercise as WritingExercise}
-            onComplete={handleRetryComplete}
-          />
-        )}
+        <ProgressBar current={retryIndex + 1} total={retryExercises.length} isRetry={true} />
+        <ExerciseRenderer
+          exercise={currentRetryExercise}
+          onComplete={handleRetryComplete}
+          keyPrefix={`retry-${retryAttempt}`}
+        />
       </div>
     );
   }
@@ -320,41 +288,12 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
 
   return (
     <div className="min-h-screen py-8">
-      {/* Progress bar */}
-      <div className="max-w-4xl mx-auto px-6 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600">
-            Ćwiczenie {progress.currentExerciseIndex + 1} z {progress.exercises.length}
-          </span>
-          <span className="text-sm text-gray-600">
-            Poprawne: {progress.results.filter((r) => r.correct).length}
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-            style={{
-              width: `${((progress.currentExerciseIndex + 1) / progress.exercises.length) * 100}%`,
-            }}
-          ></div>
-        </div>
-      </div>
-
-      {/* Current exercise */}
-      {currentExercise.type === ExerciseType.MATCHING_PAIRS && (
-        <MatchingPairs
-          key={currentExercise.id}
-          exercise={currentExercise as MatchingPairsExercise}
-          onComplete={handleExerciseComplete}
-        />
-      )}
-      {currentExercise.type === ExerciseType.WRITING && (
-        <Writing
-          key={currentExercise.id}
-          exercise={currentExercise as WritingExercise}
-          onComplete={handleExerciseComplete}
-        />
-      )}
+      <ProgressBar
+        current={progress.currentExerciseIndex + 1}
+        total={progress.exercises.length}
+        correctCount={progress.results.filter((r) => r.correct).length}
+      />
+      <ExerciseRenderer exercise={currentExercise} onComplete={handleExerciseComplete} />
     </div>
   );
 }
