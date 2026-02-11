@@ -7,7 +7,7 @@ import {
   type VocabularyPair,
 } from "@easy-lingo/shared";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ExerciseRenderer from "../components/ExerciseRenderer";
 import ExerciseSuccess from "../components/ExerciseSuccess";
 import LessonSummary from "../components/LessonSummary";
@@ -29,6 +29,7 @@ interface LessonProps {
 
 export default function Lesson({ exercises: providedExercises }: LessonProps = {}) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [state, setState] = useState<LessonState>(LessonState.LOADING);
   const [progress, setProgress] = useState<LessonProgress | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -52,8 +53,11 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
         const response = await fetch("/api/vocabulary");
         const vocabulary: VocabularyPair[] = await response.json();
 
-        // Generate random exercises
-        exercises = generateExercises(vocabulary);
+        const mode = searchParams.get("mode");
+        const forcedType = getForcedExerciseType(mode);
+
+        // Generate exercises
+        exercises = generateExercises(vocabulary, forcedType);
       }
 
       const lessonProgress: LessonProgress = {
@@ -72,17 +76,31 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
     }
   };
 
-  const generateExercises = (vocabulary: VocabularyPair[]): Exercise[] => {
-    // Random number of exercises between 5 and 10
-    const numExercises = Math.floor(Math.random() * 6) + 5;
+  const getForcedExerciseType = (mode: string | null): ExerciseType | null => {
+    if (mode === "matching") return ExerciseType.MATCHING_PAIRS;
+    if (mode === "writing") return ExerciseType.WRITING;
+    if (mode === "select") return ExerciseType.SELECT_TRANSLATION;
+    return null;
+  };
+
+  const generateExercises = (
+    vocabulary: VocabularyPair[],
+    forcedType: ExerciseType | null,
+  ): Exercise[] => {
+    const numExercises = forcedType ? 3 : Math.floor(Math.random() * 6) + 5;
     const exercises: Exercise[] = [];
 
     for (let i = 0; i < numExercises; i++) {
-      // Random exercise type
-      const isMatchingPairs = Math.random() > 0.5;
+      const rand = Math.random();
+      const exerciseType = forcedType
+        ? forcedType
+        : rand < 0.33
+          ? ExerciseType.MATCHING_PAIRS
+          : rand < 0.66
+            ? ExerciseType.WRITING
+            : ExerciseType.SELECT_TRANSLATION;
 
-      if (isMatchingPairs) {
-        // Matching pairs: select 4-6 random pairs
+      if (exerciseType === ExerciseType.MATCHING_PAIRS) {
         const numPairs = Math.floor(Math.random() * 3) + 4;
         const selectedPairs = getRandomItems(vocabulary, numPairs);
 
@@ -91,14 +109,34 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
           type: ExerciseType.MATCHING_PAIRS,
           pairs: selectedPairs,
         });
-      } else {
-        // Writing: select 1 random pair
+      } else if (exerciseType === ExerciseType.WRITING) {
         const selectedPair = getRandomItems(vocabulary, 1)[0];
 
         exercises.push({
           id: `exercise-${i}`,
           type: ExerciseType.WRITING,
           pair: selectedPair,
+        });
+      } else {
+        // Select Translation: select 3-5 random pairs
+        const numOptions = Math.floor(Math.random() * 3) + 3;
+        const selectedPairs = getRandomItems(vocabulary, numOptions);
+
+        // First pair is the correct one
+        const correctPair = selectedPairs[0];
+
+        // Shuffle all options
+        const allOptions = [...selectedPairs].sort(() => Math.random() - 0.5);
+
+        // Random direction
+        const direction = Math.random() < 0.5 ? "pl-en" : "en-pl";
+
+        exercises.push({
+          id: `exercise-${i}`,
+          type: ExerciseType.SELECT_TRANSLATION,
+          correctPair,
+          allOptions,
+          direction,
         });
       }
     }

@@ -1,6 +1,7 @@
 import {
   ExerciseType,
   MatchingPairsExercise,
+  SelectTranslationExercise,
   WritingExercise,
   type Exercise,
   type VocabularyPair,
@@ -41,6 +42,24 @@ export function createMatchingPairsExercise(
     id,
     type: ExerciseType.MATCHING_PAIRS,
     pairs,
+  };
+}
+
+/**
+ * Creates a SelectTranslation exercise with given parameters
+ */
+export function createSelectTranslationExercise(
+  id: string,
+  correctPair: VocabularyPair,
+  allOptions: VocabularyPair[],
+  direction: "pl-en" | "en-pl",
+): SelectTranslationExercise {
+  return {
+    id,
+    type: ExerciseType.SELECT_TRANSLATION,
+    correctPair,
+    allOptions,
+    direction,
   };
 }
 

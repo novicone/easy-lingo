@@ -21,12 +21,15 @@ export default function Home() {
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
   const handleStartLesson = () => {
     navigate("/lesson");
+  };
+
+  const handleStartLessonWithMode = (mode: "matching" | "writing" | "select") => {
+    navigate(`/lesson?mode=${mode}`);
   };
 
   return (
@@ -37,21 +40,15 @@ export default function Home() {
           <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-4">
             easy-lingo
           </h1>
-          <p className="text-xl text-gray-600">
-            Nauka angielskiego w prosty sposób
-          </p>
+          <p className="text-xl text-gray-600">Nauka angielskiego w prosty sposób</p>
         </div>
 
         {/* Stats Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">
-                Ukończone lekcje
-              </p>
-              <p className="text-5xl font-bold text-blue-600">
-                {completedLessons}
-              </p>
+              <p className="text-gray-600 text-sm uppercase tracking-wide mb-1">Ukończone lekcje</p>
+              <p className="text-5xl font-bold text-blue-600">{completedLessons}</p>
             </div>
             <div className="text-6xl">
               {completedLessons === 0
@@ -68,17 +65,44 @@ export default function Home() {
         {/* Start button */}
         <button
           onClick={handleStartLesson}
-          className="w-full px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-2xl font-bold rounded-2xl transition-all shadow-lg hover:shadow-2xl transform hover:scale-105"
+          className="w-full px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-2xl font-bold rounded-2xl transition-all shadow-lg hover:shadow-2xl transform hover:scale-105 mb-4"
         >
-          🚀 Rozpocznij lekcję
+          🚀 Rozpocznij lekcję (losowa)
         </button>
+
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Szybki start (3 ćwiczenia)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              onClick={() => handleStartLessonWithMode("matching")}
+              className="px-4 py-3 bg-blue-50 border-2 border-blue-200 hover:border-blue-400 text-blue-800 font-semibold rounded-xl transition-all text-sm"
+            >
+              🧩 Tylko pary
+              <div className="text-xs text-blue-600">3 ćwiczenia</div>
+            </button>
+            <button
+              onClick={() => handleStartLessonWithMode("writing")}
+              className="px-4 py-3 bg-indigo-50 border-2 border-indigo-200 hover:border-indigo-400 text-indigo-800 font-semibold rounded-xl transition-all text-sm"
+            >
+              ✍️ Tylko pisanie
+              <div className="text-xs text-indigo-600">3 ćwiczenia</div>
+            </button>
+            <button
+              onClick={() => handleStartLessonWithMode("select")}
+              className="px-4 py-3 bg-teal-50 border-2 border-teal-200 hover:border-teal-400 text-teal-800 font-semibold rounded-xl transition-all text-sm"
+            >
+              🔍 Wybór tłumaczenia
+              <div className="text-xs text-teal-600">3 ćwiczenia</div>
+            </button>
+          </div>
+        </div>
 
         {/* Info box */}
         <div className="mt-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
           <h3 className="font-semibold text-blue-800 mb-2">Jak to działa?</h3>
           <ul className="text-blue-700 space-y-1 text-sm">
-            <li>• Każda lekcja zawiera 5-10 losowych ćwiczeń</li>
-            <li>• Ćwicz łączenie par i pisanie tłumaczeń</li>
+            <li>• Każda lekcja zawiera 5-10 losowych ćwiczeń (lub 3 w trybie szybkiego startu)</li>
+            <li>• Ćwicz łączenie par, pisanie oraz wybór tłumaczenia</li>
             <li>• Sprawdź swój wynik na końcu lekcji</li>
             <li>• Im więcej ćwiczysz, tym więcej się uczysz! 📚</li>
           </ul>

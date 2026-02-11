@@ -31,6 +31,18 @@
     const generated = exercises || generateRandomExercises();
   }
   ```
+- **Tests alongside implementation**: When planning work, combine test writing and implementation in a single step:
+  ```
+  ❌ WRONG:
+  Step 2: Create Component.tsx
+  Step 3: Create Component.test.tsx
+  
+  ✅ CORRECT:
+  Step 2: Create Component.tsx + tests (TDD)
+    a) Write Component.test.tsx (define expected behavior)
+    b) Implement Component.tsx
+    c) Run tests to verify
+  ```
 
 ### React Patterns
 

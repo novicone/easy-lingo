@@ -1,5 +1,6 @@
 import { ExerciseType, type Exercise } from "@easy-lingo/shared";
 import MatchingPairs from "./exercises/MatchingPairs";
+import SelectTranslation from "./exercises/SelectTranslation";
 import Writing from "./exercises/Writing";
 
 interface ExerciseRendererProps {
@@ -20,6 +21,8 @@ export default function ExerciseRenderer({
       return <MatchingPairs key={key} exercise={exercise} onComplete={onComplete} />;
     case ExerciseType.WRITING:
       return <Writing key={key} exercise={exercise} onComplete={onComplete} />;
+    case ExerciseType.SELECT_TRANSLATION:
+      return <SelectTranslation key={key} exercise={exercise} onComplete={onComplete} />;
     default:
       // Exhaustive check: TypeScript error if new exercise type added but not handled
       const _exhaustive: never = exercise;

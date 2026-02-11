@@ -22,6 +22,7 @@ export interface VocabularyPair {
 export enum ExerciseType {
   MATCHING_PAIRS,
   WRITING,
+  SELECT_TRANSLATION,
 }
 
 export interface BaseExercise {
@@ -39,7 +40,14 @@ export interface WritingExercise extends BaseExercise {
   pair: VocabularyPair;
 }
 
-export type Exercise = MatchingPairsExercise | WritingExercise;
+export interface SelectTranslationExercise extends BaseExercise {
+  type: ExerciseType.SELECT_TRANSLATION;
+  correctPair: VocabularyPair;
+  allOptions: VocabularyPair[];
+  direction: "pl-en" | "en-pl";
+}
+
+export type Exercise = MatchingPairsExercise | WritingExercise | SelectTranslationExercise;
 
 // Lesson progress
 export interface ExerciseResult {
