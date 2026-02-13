@@ -1,337 +1,100 @@
-import {
-  ExerciseType,
-  type Exercise,
-  type ExerciseResult,
-  type LessonProgress,
-  type LessonSummaryData,
-  type VocabularyPair,
-} from "@easy-lingo/shared";
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import type { Exercise, LessonSummaryData } from "@easy-lingo/shared";
 import ExerciseRenderer from "../components/ExerciseRenderer";
 import ExerciseSuccess from "../components/ExerciseSuccess";
 import LessonSummary from "../components/LessonSummary";
 import ProgressBar from "../components/ProgressBar";
 import RetryIntro from "../components/RetryIntro";
-
-enum LessonState {
-  LOADING = "loading",
-  EXERCISE = "exercise",
-  SUCCESS = "success",
-  RETRY_INTRO = "retry_intro",
-  RETRY = "retry",
-  SUMMARY = "summary",
-}
+import { LessonState, useLessonState } from "./hooks/useLessonState";
 
 interface LessonProps {
   exercises?: Exercise[]; // For tests - if provided, skips random generation
 }
 
 export default function Lesson({ exercises: providedExercises }: LessonProps = {}) {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [state, setState] = useState<LessonState>(LessonState.LOADING);
-  const [progress, setProgress] = useState<LessonProgress | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [retryExercises, setRetryExercises] = useState<Exercise[]>([]);
-  const [retryIndex, setRetryIndex] = useState(0);
-  const [retryAttempt, setRetryAttempt] = useState(0);
-
-  useEffect(() => {
-    initializeLesson();
-  }, []);
-
-  const initializeLesson = async () => {
-    try {
-      let exercises: Exercise[];
-
-      if (providedExercises) {
-        // Use provided exercises (test mode)
-        exercises = providedExercises;
-      } else {
-        // Fetch vocabulary from API
-        const response = await fetch("/api/vocabulary");
-        const vocabulary: VocabularyPair[] = await response.json();
-
-        const mode = searchParams.get("mode");
-        const forcedType = getForcedExerciseType(mode);
-
-        // Generate exercises
-        exercises = generateExercises(vocabulary, forcedType);
-      }
-
-      const lessonProgress: LessonProgress = {
-        lessonId: "lesson-1",
-        exercises,
-        currentExerciseIndex: 0,
-        results: [],
-        startTime: Date.now(),
-      };
-
-      setProgress(lessonProgress);
-      setState(LessonState.EXERCISE);
-    } catch (error) {
-      console.error("Failed to initialize lesson:", error);
-      navigate("/");
-    }
-  };
-
-  const getForcedExerciseType = (mode: string | null): ExerciseType | null => {
-    if (mode === "matching") return ExerciseType.MATCHING_PAIRS;
-    if (mode === "writing") return ExerciseType.WRITING;
-    if (mode === "select") return ExerciseType.SELECT_TRANSLATION;
-    return null;
-  };
-
-  const generateExercises = (
-    vocabulary: VocabularyPair[],
-    forcedType: ExerciseType | null,
-  ): Exercise[] => {
-    const numExercises = forcedType ? 3 : Math.floor(Math.random() * 6) + 5;
-    const exercises: Exercise[] = [];
-
-    for (let i = 0; i < numExercises; i++) {
-      const rand = Math.random();
-      const exerciseType = forcedType
-        ? forcedType
-        : rand < 0.33
-          ? ExerciseType.MATCHING_PAIRS
-          : rand < 0.66
-            ? ExerciseType.WRITING
-            : ExerciseType.SELECT_TRANSLATION;
-
-      if (exerciseType === ExerciseType.MATCHING_PAIRS) {
-        const numPairs = Math.floor(Math.random() * 3) + 4;
-        const selectedPairs = getRandomItems(vocabulary, numPairs);
-
-        exercises.push({
-          id: `exercise-${i}`,
-          type: ExerciseType.MATCHING_PAIRS,
-          pairs: selectedPairs,
-        });
-      } else if (exerciseType === ExerciseType.WRITING) {
-        const selectedPair = getRandomItems(vocabulary, 1)[0];
-
-        exercises.push({
-          id: `exercise-${i}`,
-          type: ExerciseType.WRITING,
-          pair: selectedPair,
-        });
-      } else {
-        // Select Translation: select 3-5 random pairs
-        const numOptions = Math.floor(Math.random() * 3) + 3;
-        const selectedPairs = getRandomItems(vocabulary, numOptions);
-
-        // First pair is the correct one
-        const correctPair = selectedPairs[0];
-
-        // Shuffle all options
-        const allOptions = [...selectedPairs].sort(() => Math.random() - 0.5);
-
-        // Random direction
-        const direction = Math.random() < 0.5 ? "pl-en" : "en-pl";
-
-        exercises.push({
-          id: `exercise-${i}`,
-          type: ExerciseType.SELECT_TRANSLATION,
-          correctPair,
-          allOptions,
-          direction,
-        });
-      }
-    }
-
-    return exercises;
-  };
-
-  const getRandomItems = <T,>(array: T[], count: number): T[] => {
-    const shuffled = [...array].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(count, array.length));
-  };
-
-  const handleExerciseComplete = (correct: boolean) => {
-    if (!progress) return;
-
-    const currentExercise = progress.exercises[progress.currentExerciseIndex];
-
-    const result: ExerciseResult = {
-      exerciseId: currentExercise.id,
-      exerciseType: currentExercise.type,
-      correct,
-    };
-
-    const updatedProgress = {
-      ...progress,
-      results: [...progress.results, result],
-    };
-
-    setProgress(updatedProgress);
-
-    // Show success screen only if correct
-    if (correct) {
-      setShowSuccess(true);
-    } else {
-      // Move to next exercise or show summary
-      moveToNextExercise(updatedProgress);
-    }
-  };
-
-  const handleSuccessContinue = () => {
-    setShowSuccess(false);
-    const isRetryMode = state === LessonState.RETRY;
-
-    if (isRetryMode) {
-      // Retry mode: move to next retry exercise or show summary
-      if (retryIndex >= retryExercises.length - 1) {
-        if (progress) {
-          const endTime = Date.now();
-          const updatedProgress = { ...progress, endTime };
-          setProgress(updatedProgress);
-          setState(LessonState.SUMMARY);
-        }
-      } else {
-        setRetryIndex(retryIndex + 1);
-        setState(LessonState.RETRY);
-      }
-    } else {
-      // Normal mode: move to next exercise
-      if (progress) {
-        moveToNextExercise(progress);
-      }
-    }
-  };
-
-  const moveToNextExercise = (currentProgress: LessonProgress) => {
-    if (currentProgress.currentExerciseIndex >= currentProgress.exercises.length - 1) {
-      // Last exercise - check if there are any incorrect exercises
-      const incorrectExercises = getIncorrectExercises(currentProgress);
-
-      if (incorrectExercises.length > 0) {
-        // There are incorrect exercises - show retry intro
-        setRetryExercises(incorrectExercises);
-        setRetryIndex(0);
-        setState(LessonState.RETRY_INTRO);
-      } else {
-        // All exercises correct - show summary
-        const endTime = Date.now();
-        const updatedProgress = { ...currentProgress, endTime };
-        setProgress(updatedProgress);
-        setState(LessonState.SUMMARY);
-      }
-    } else {
-      // Move to next exercise
-      setProgress({
-        ...currentProgress,
-        currentExerciseIndex: currentProgress.currentExerciseIndex + 1,
-      });
-      setState(LessonState.EXERCISE);
-    }
-  };
-
-  const getIncorrectExercises = (currentProgress: LessonProgress): Exercise[] => {
-    const incorrectExerciseIds = new Set(
-      currentProgress.results.filter((r) => !r.correct).map((r) => r.exerciseId),
-    );
-
-    return currentProgress.exercises.filter((ex) => incorrectExerciseIds.has(ex.id));
-  };
-
-  const handleRetryIntroContinue = () => {
-    setState(LessonState.RETRY);
-  };
-
-  const handleRetryComplete = (correct: boolean) => {
-    if (!progress) return;
-
-    // Show success screen only if correct
-    if (correct) {
-      setShowSuccess(true);
-    } else {
-      // Incorrect - move this exercise to the end of retry queue
-      const currentExercise = retryExercises[retryIndex];
-      const updatedRetryExercises = [
-        ...retryExercises.slice(0, retryIndex),
-        ...retryExercises.slice(retryIndex + 1),
-        currentExercise,
-      ];
-      setRetryExercises(updatedRetryExercises);
-      setRetryAttempt((prev) => prev + 1);
-
-      // If there are more exercises, stay at same index (which now points to next exercise)
-      // Otherwise we're done (shouldn't happen as we just added one to the end)
-      setState(LessonState.RETRY);
-    }
-  };
-
-  const handleLessonComplete = () => {
-    // Increment completed lessons counter in localStorage
-    const completedLessons = parseInt(localStorage.getItem("completedLessons") || "0");
-    localStorage.setItem("completedLessons", (completedLessons + 1).toString());
-  };
-
-  if (state === LessonState.LOADING) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Przygotowuję lekcję...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (state === LessonState.SUMMARY && progress) {
-    const totalTime = Math.floor((progress.endTime! - progress.startTime) / 1000);
-    const correctCount = progress.results.filter((r) => r.correct).length;
-
-    const summary: LessonSummaryData = {
-      totalExercises: progress.exercises.length,
-      correctExercises: correctCount,
-      totalTime,
-    };
-
-    return <LessonSummary summary={summary} onComplete={handleLessonComplete} />;
-  }
+  const {
+    state,
+    progress,
+    showSuccess,
+    retryExercises,
+    retryIndex,
+    retryAttempt,
+    handleExerciseComplete,
+    handleSuccessContinue,
+    handleRetryIntroContinue,
+    handleRetryComplete,
+    handleLessonComplete,
+  } = useLessonState({ exercises: providedExercises });
 
   if (showSuccess) {
     return <ExerciseSuccess onContinue={handleSuccessContinue} />;
   }
 
-  if (state === LessonState.RETRY_INTRO) {
-    return (
-      <RetryIntro incorrectCount={retryExercises.length} onContinue={handleRetryIntroContinue} />
-    );
+  switch (state) {
+    case LessonState.LOADING:
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-xl text-gray-600">Przygotowuję lekcję...</p>
+          </div>
+        </div>
+      );
+
+    case LessonState.SUMMARY: {
+      if (!progress) return null;
+
+      const totalTime = Math.floor((progress.endTime! - progress.startTime) / 1000);
+      const correctCount = progress.results.filter((r) => r.correct).length;
+
+      const summary: LessonSummaryData = {
+        totalExercises: progress.exercises.length,
+        correctExercises: correctCount,
+        totalTime,
+      };
+
+      return <LessonSummary summary={summary} onComplete={handleLessonComplete} />;
+    }
+
+    case LessonState.RETRY_INTRO:
+      return (
+        <RetryIntro incorrectCount={retryExercises.length} onContinue={handleRetryIntroContinue} />
+      );
+
+    case LessonState.RETRY: {
+      if (retryExercises.length === 0) return null;
+
+      const currentRetryExercise = retryExercises[retryIndex];
+
+      return (
+        <div className="min-h-screen py-8">
+          <ProgressBar current={retryIndex + 1} total={retryExercises.length} isRetry={true} />
+          <ExerciseRenderer
+            exercise={currentRetryExercise}
+            onComplete={handleRetryComplete}
+            keyPrefix={`retry-${retryAttempt}`}
+          />
+        </div>
+      );
+    }
+
+    case LessonState.EXERCISE: {
+      if (!progress) return null;
+
+      const currentExercise = progress.exercises[progress.currentExerciseIndex];
+
+      return (
+        <div className="min-h-screen py-8">
+          <ProgressBar
+            current={progress.currentExerciseIndex + 1}
+            total={progress.exercises.length}
+            correctCount={progress.results.filter((r) => r.correct).length}
+          />
+          <ExerciseRenderer exercise={currentExercise} onComplete={handleExerciseComplete} />
+        </div>
+      );
+    }
+
+    default:
+      return null;
   }
-
-  if (state === LessonState.RETRY && retryExercises.length > 0) {
-    const currentRetryExercise = retryExercises[retryIndex];
-
-    return (
-      <div className="min-h-screen py-8">
-        <ProgressBar current={retryIndex + 1} total={retryExercises.length} isRetry={true} />
-        <ExerciseRenderer
-          exercise={currentRetryExercise}
-          onComplete={handleRetryComplete}
-          keyPrefix={`retry-${retryAttempt}`}
-        />
-      </div>
-    );
-  }
-
-  if (!progress || state !== LessonState.EXERCISE) {
-    return null;
-  }
-
-  const currentExercise = progress.exercises[progress.currentExerciseIndex];
-
-  return (
-    <div className="min-h-screen py-8">
-      <ProgressBar
-        current={progress.currentExerciseIndex + 1}
-        total={progress.exercises.length}
-        correctCount={progress.results.filter((r) => r.correct).length}
-      />
-      <ExerciseRenderer exercise={currentExercise} onComplete={handleExerciseComplete} />
-    </div>
-  );
 }
