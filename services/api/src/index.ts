@@ -1,4 +1,5 @@
 import { VocabularyPair } from "@easy-lingo/shared";
+import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 import * as fs from "fs";
 import Parse from "papaparse";
@@ -34,15 +35,33 @@ try {
   );
 }
 
+// API Routes (must be registered before static files)
 server.get("/health", async () => ({ status: "ok" }));
 
 server.get("/api/vocabulary", async (): Promise<VocabularyPair[]> => {
   return vocabulary;
 });
 
+// Serve static files from the web app (in production)
+const staticPath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "apps", "web", "dist");
+if (fs.existsSync(staticPath)) {
+  server.register(fastifyStatic, {
+    root: staticPath,
+    prefix: "/",
+  });
+
+  // SPA fallback - serve index.html for client-side routing
+  server.setNotFoundHandler((request, reply) => {
+    reply.sendFile("index.html");
+  });
+
+  console.log(`Serving static files from ${staticPath}`);
+}
+
 const start = async () => {
   try {
-    await server.listen({ port: 4000, host: "0.0.0.0" });
+    const port = parseInt(process.env.PORT || "4000", 10);
+    await server.listen({ port, host: "0.0.0.0" });
   } catch (err) {
     server.log.error(err);
     process.exit(1);
