@@ -43,7 +43,7 @@ server.get("/api/vocabulary", async (): Promise<VocabularyPair[]> => {
 });
 
 // Serve static files from the web app (in production)
-const staticPath = path.join(__dirname, "..", "..", "..", "..", "..", "..", "apps", "web", "dist");
+const staticPath = path.join(__dirname, "..", "..", "..", "apps", "web", "dist");
 if (fs.existsSync(staticPath)) {
   server.register(fastifyStatic, {
     root: staticPath,
