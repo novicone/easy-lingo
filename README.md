@@ -22,7 +22,7 @@ Monorepo z trzema pakietami:
 
 ### Wymagania
 
-- Node.js >= 18
+- Node.js >= 20
 - pnpm >= 8
 
 ### Instalacja i uruchomienie
@@ -30,7 +30,22 @@ Monorepo z trzema pakietami:
 ```bash
 pnpm install
 pnpm dev              # Frontend (5173) + Backend (4000)
+pnpm dev:web          # Tylko frontend
+pnpm dev:api          # Tylko backend
 ```
+
+### Build i production
+
+```bash
+pnpm build            # Buduje wszystkie pakiety
+pnpm --filter @easy-lingo/api start   # Uruchamia production server
+```
+
+Production build tworzy self-contained artifact w `services/api/dist/`:
+
+- `index.js` — bundled server
+- `public/` — frontend assets
+- `data/` — vocabulary files
 
 ### Testy
 
@@ -45,6 +60,18 @@ pnpm test:web                  # Tryb watch
 ```bash
 pnpm typecheck                 # Sprawdza typy TypeScript bez budowania
 ```
+
+## 🚀 Deployment
+
+### Render.com
+
+**Setup:** Single Web Service  
+**Build Command:** `pnpm install && pnpm build`  
+**Start Command:** `pnpm --filter @easy-lingo/api start`  
+**Port:** Ustawia się automatycznie z `process.env.PORT`  
+**Node Version:** Automatycznie wykrywana z `.node-version` (Node 20)
+
+Serwer serwuje zarówno API (`/api/*`) jak i frontend (`/`).
 
 ## 🤖 Dla developerów
 

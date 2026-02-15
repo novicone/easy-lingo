@@ -1,9 +1,12 @@
 import * as esbuild from "esbuild";
-import { copyFileSync, mkdirSync } from "fs";
+import { copyFileSync, cpSync, mkdirSync, rmSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Clean dist folder
+rmSync(join(__dirname, "dist"), { recursive: true, force: true });
 
 await esbuild.build({
   entryPoints: ["src/index.ts"],
@@ -23,4 +26,12 @@ copyFileSync(
   join(__dirname, "dist", "data", "unit4_vocabulary.csv"),
 );
 
+// Copy web frontend into dist/public
+const webDistPath = join(__dirname, "..", "..", "apps", "web", "dist");
+const publicPath = join(__dirname, "dist", "public");
+cpSync(webDistPath, publicPath, { recursive: true });
+
 console.log("✓ Build complete");
+console.log("  - Server: dist/index.js");
+console.log("  - Frontend: dist/public/");
+console.log("  - Data: dist/data/");

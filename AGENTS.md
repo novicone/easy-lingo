@@ -55,6 +55,18 @@
 ### Monorepo
 
 - **Import shared types**: `import { Exercise } from "@easy-lingo/shared";`
+- **Declare dependencies**: All packages must declare `@easy-lingo/shared` in `dependencies` if they import from it
+
+### Build System
+
+- **Dev mode**: Uses `tsx watch` for API (fast, full ESM support)
+- **Production**: Uses `esbuild` to bundle API into single file
+- **Unified build**: `pnpm build` builds all packages in dependency order
+- **Collocated output**: `services/api/dist/` contains everything:
+  - `index.js` — bundled server
+  - `public/` — frontend (copied from `apps/web/dist`)
+  - `data/` — CSV files
+- **Self-contained deployment**: Just deploy `services/api/dist/` folder
 
 ## ⚠️ Gotchas
 
@@ -105,3 +117,18 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 ```
+
+### Dev Server Issues
+
+**Problem**: `ts-node-dev` fails with "Must use import to load ES Module"
+
+**Why**: `ts-node-dev` has poor ESM support, doesn't work with `"type": "module"`
+
+**Solution**: Use `tsx` instead:
+```json
+"scripts": {
+  "dev": "tsx watch src/index.ts"
+}
+```
+
+**Benefits**: Faster startup, full ESM support, better TypeScript handling

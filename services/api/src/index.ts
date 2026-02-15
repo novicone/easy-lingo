@@ -14,7 +14,6 @@ const server = Fastify({ logger: true });
 
 // Load vocabulary from CSV file
 let vocabulary: VocabularyPair[] = [];
-const vocabularyPath = path.join("data", "vocabulary.json");
 try {
   const unit4VocabularyPath = path.join("data", "unit4_vocabulary.csv");
   const unit4VocabularyParseResult = Parse.parse<VocabularyPair>(
@@ -30,7 +29,7 @@ try {
   console.log(`Loaded ${vocabulary.length} vocabulary pairs`);
 } catch (error) {
   console.error(
-    `Failed to load vocabulary from ${vocabularyPath}. The server will start with an empty vocabulary, and the /api/vocabulary endpoint will return an empty list.`,
+    `Failed to load vocabulary. The server will start with an empty vocabulary, and the /api/vocabulary endpoint will return an empty list.`,
     error,
   );
 }
@@ -43,7 +42,7 @@ server.get("/api/vocabulary", async (): Promise<VocabularyPair[]> => {
 });
 
 // Serve static files from the web app (in production)
-const staticPath = path.join(__dirname, "..", "..", "..", "apps", "web", "dist");
+const staticPath = path.join(__dirname, "public");
 if (fs.existsSync(staticPath)) {
   server.register(fastifyStatic, {
     root: staticPath,
