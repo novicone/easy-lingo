@@ -25,76 +25,101 @@ export default function Lesson({ exercises: providedExercises }: LessonProps = {
     handleLessonComplete,
   } = useLessonState({ exercises: providedExercises });
 
-  if (showSuccess) {
-    return <ExerciseSuccess onContinue={handleSuccessContinue} />;
+  const showProgressBar = state !== LessonState.LOADING && state !== LessonState.SUMMARY;
+
+  let progressBarProps: { current: number; total: number; isRetry?: boolean; correctCount?: number } | null = null;
+  if (showProgressBar) {
+    if (state === LessonState.RETRY || state === LessonState.RETRY_INTRO) {
+      progressBarProps = {
+        current: retryIndex + 1,
+        total: retryExercises.length,
+        isRetry: true,
+      };
+    } else if (progress) {
+      progressBarProps = {
+        current: progress.currentExerciseIndex + 1,
+        total: progress.exercises.length,
+        correctCount: progress.results.filter((r) => r.correct).length,
+      };
+    }
   }
 
-  switch (state) {
-    case LessonState.LOADING:
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-xl text-gray-600">Przygotowuję lekcję...</p>
-          </div>
-        </div>
-      );
-
-    case LessonState.SUMMARY: {
-      if (!progress) return null;
-
-      const totalTime = Math.floor((progress.endTime! - progress.startTime) / 1000);
-      const correctCount = progress.results.filter((r) => r.correct).length;
-
-      const summary: LessonSummaryData = {
-        totalExercises: progress.exercises.length,
-        correctExercises: correctCount,
-        totalTime,
-      };
-
-      return <LessonSummary summary={summary} onComplete={handleLessonComplete} />;
+  const renderContent = () => {
+    if (showSuccess) {
+      return <ExerciseSuccess onContinue={handleSuccessContinue} />;
     }
 
-    case LessonState.RETRY_INTRO:
-      return (
-        <RetryIntro incorrectCount={retryExercises.length} onContinue={handleRetryIntroContinue} />
-      );
+    switch (state) {
+      case LessonState.LOADING:
+        return (
+          <div className="w-full flex justify-center pt-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-xl text-gray-600">Przygotowuję lekcję...</p>
+            </div>
+          </div>
+        );
 
-    case LessonState.RETRY: {
-      if (retryExercises.length === 0) return null;
+      case LessonState.SUMMARY: {
+        if (!progress) return null;
 
-      const currentRetryExercise = retryExercises[retryIndex];
+        const totalTime = Math.floor((progress.endTime! - progress.startTime) / 1000);
+        const correctCount = progress.results.filter((r) => r.correct).length;
 
-      return (
-        <div className="min-h-screen py-8">
-          <ProgressBar current={retryIndex + 1} total={retryExercises.length} isRetry={true} />
+        const summary: LessonSummaryData = {
+          totalExercises: progress.exercises.length,
+          correctExercises: correctCount,
+          totalTime,
+        };
+
+        return <LessonSummary summary={summary} onComplete={handleLessonComplete} />;
+      }
+
+      case LessonState.RETRY_INTRO:
+        return (
+          <RetryIntro
+            incorrectCount={retryExercises.length}
+            onContinue={handleRetryIntroContinue}
+          />
+        );
+
+      case LessonState.RETRY: {
+        if (retryExercises.length === 0) return null;
+
+        const currentRetryExercise = retryExercises[retryIndex];
+
+        return (
           <ExerciseRenderer
             exercise={currentRetryExercise}
             onComplete={handleRetryComplete}
             keyPrefix={`retry-${retryAttempt}`}
           />
-        </div>
-      );
+        );
+      }
+
+      case LessonState.EXERCISE: {
+        if (!progress) return null;
+
+        const currentExercise = progress.exercises[progress.currentExerciseIndex];
+
+        return <ExerciseRenderer exercise={currentExercise} onComplete={handleExerciseComplete} />;
+      }
+
+      default:
+        return null;
     }
+  };
 
-    case LessonState.EXERCISE: {
-      if (!progress) return null;
-
-      const currentExercise = progress.exercises[progress.currentExerciseIndex];
-
-      return (
-        <div className="min-h-screen py-8">
-          <ProgressBar
-            current={progress.currentExerciseIndex + 1}
-            total={progress.exercises.length}
-            correctCount={progress.results.filter((r) => r.correct).length}
-          />
-          <ExerciseRenderer exercise={currentExercise} onComplete={handleExerciseComplete} />
+  return (
+    <div className="page-shell">
+      {showProgressBar && progressBarProps && (
+        <div className="w-full pt-8">
+          <ProgressBar {...progressBarProps} />
         </div>
-      );
-    }
-
-    default:
-      return null;
-  }
+      )}
+      <div className="w-full max-w-4xl px-4 pb-8 flex-grow flex flex-col items-center justify-start">
+        {renderContent()}
+      </div>
+    </div>
+  );
 }

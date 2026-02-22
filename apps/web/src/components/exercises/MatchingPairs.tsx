@@ -11,10 +11,7 @@ interface SelectedPair {
   english?: VocabularyPair;
 }
 
-export default function MatchingPairs({
-  exercise,
-  onComplete,
-}: MatchingPairsProps) {
+export default function MatchingPairs({ exercise, onComplete }: MatchingPairsProps) {
   const [selectedPair, setSelectedPair] = useState<SelectedPair>({});
   const [matchedPairs, setMatchedPairs] = useState<Set<string>>(new Set());
   const [errorPair, setErrorPair] = useState<SelectedPair | null>(null);
@@ -75,9 +72,7 @@ export default function MatchingPairs({
         ? selectedPair.polish?.id === pair.id
         : selectedPair.english?.id === pair.id;
     const isError =
-      side === "polish"
-        ? errorPair?.polish?.id === pair.id
-        : errorPair?.english?.id === pair.id;
+      side === "polish" ? errorPair?.polish?.id === pair.id : errorPair?.english?.id === pair.id;
 
     let classes = "p-4 rounded-lg cursor-pointer transition-all border-2 ";
 
@@ -88,18 +83,15 @@ export default function MatchingPairs({
     } else if (isSelected) {
       classes += "bg-blue-100 border-blue-500 text-blue-700";
     } else {
-      classes +=
-        "bg-white border-gray-300 hover:border-blue-400 hover:shadow-md";
+      classes += "bg-white border-gray-300 hover:border-blue-400 hover:shadow-md";
     }
 
     return classes;
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-        Połącz pary słów
-      </h2>
+    <div className="w-full max-w-4xl mx-auto">
+      <h2 className="exercise-heading">Połącz pary słów</h2>
 
       <div className="grid grid-cols-2 gap-8">
         {/* Polish column */}

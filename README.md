@@ -4,7 +4,7 @@ Aplikacja webowa do nauki angielskiego z interaktywnymi ćwiczeniami.
 
 ## ✨ Funkcjonalność
 
-- System lekcji z losowymi ćwiczeniami (pisanie tłumaczeń, łączenie par)
+- System lekcji z losowymi ćwiczeniami (pisanie tłumaczeń, wybór tłumaczenia, łączenie par)
 - System retry - poprawianie błędnych odpowiedzi
 - Tracking postępów i statystyki (wynik, czas, accuracy)
 

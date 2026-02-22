@@ -32,17 +32,35 @@
   }
   ```
 - **Tests alongside implementation**: When planning work, combine test writing and implementation in a single step:
+
   ```
   ❌ WRONG:
   Step 2: Create Component.tsx
   Step 3: Create Component.test.tsx
-  
+
   ✅ CORRECT:
   Step 2: Create Component.tsx + tests (TDD)
     a) Write Component.test.tsx (define expected behavior)
     b) Implement Component.tsx
     c) Run tests to verify
   ```
+
+### UI Architecture
+
+- **Page roots** must use the `.page-shell` CSS class (defined in `index.css` via `@layer components`) instead of inline Tailwind equivalents.
+- **Lesson content wrapper** pattern inside `.page-shell`:
+  ```tsx
+  <div className="w-full max-w-4xl px-4 pb-8 flex-grow flex flex-col items-center justify-start">
+    {/* content */}
+  </div>
+  ```
+- **Exercise wrapper**: Use `<ExerciseCard>` (`components/ExerciseCard.tsx`) for any exercise or feedback card. It provides `w-full max-w-2xl mx-auto` + `bg-white rounded-xl shadow-lg p-8`. Accepts optional `centered` prop.
+- **Wrong-answer feedback**: Use `<WrongAnswerFeedback>` (`components/WrongAnswerFeedback.tsx`) — do not duplicate this JSX in exercise components.
+- **CSS meta-classes** available in all components (defined in `index.css`):
+  - `.page-shell` — full-screen page root with gradient background
+  - `.exercise-heading` — standard exercise `<h2>` style
+  - `.question-word` — word/phrase display tile (blue bordered box)
+  - `.btn-continue` — standard "Dalej" / continue button
 
 ### React Patterns
 
@@ -125,6 +143,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 **Why**: `ts-node-dev` has poor ESM support, doesn't work with `"type": "module"`
 
 **Solution**: Use `tsx` instead:
+
 ```json
 "scripts": {
   "dev": "tsx watch src/index.ts"
