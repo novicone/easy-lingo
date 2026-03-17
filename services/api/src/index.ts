@@ -15,7 +15,7 @@ const server = Fastify({ logger: true });
 // Load vocabulary from CSV file
 let vocabulary: VocabularyPair[] = [];
 try {
-  const unit4VocabularyPath = path.join("data", "unit4_vocabulary.csv");
+  const unit4VocabularyPath = path.join("data", "unit5_vocabulary.csv");
   const unit4VocabularyParseResult = Parse.parse<VocabularyPair>(
     fs.readFileSync(path.join(__dirname, unit4VocabularyPath), "utf-8"),
     { header: true, skipEmptyLines: true },
