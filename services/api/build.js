@@ -22,8 +22,8 @@ await esbuild.build({
 // Copy data files
 mkdirSync(join(__dirname, "dist", "data"), { recursive: true });
 copyFileSync(
-  join(__dirname, "src", "data", "unit5_vocabulary.csv"),
-  join(__dirname, "dist", "data", "unit5_vocabulary.csv"),
+  join(__dirname, "src", "data", "unit6_vocabulary.csv"),
+  join(__dirname, "dist", "data", "unit6_vocabulary.csv"),
 );
 
 // Copy web frontend into dist/public
